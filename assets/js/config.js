@@ -16,8 +16,8 @@ const ITP_CONFIG = (() => {
   // Remplace ces valeurs par celles de ton projet Supabase :
   //   1. Va sur https://supabase.com → New project → "itp_university"
   //   2. Settings → API → copie "Project URL" et "anon public key"
-  const SUPABASE_URL    = 'https://VOTRE_ID.supabase.co';
-  const SUPABASE_ANON   = 'VOTRE_ANON_KEY';
+  const SUPABASE_URL    = 'https://teqcoroyanfxcbcwheom.supabase.co';
+  const SUPABASE_ANON   = 'sb_publishable_EcjZzrQ47IRHVLTiWqBI7Q_9x9RYPON';
 
   // ── Paramètres Laravel (XAMPP) ────────────────────────────────────────────
   const LARAVEL_URL     = 'http://localhost/itp_laravel/api/v1';
