@@ -1,0 +1,209 @@
+<!DOCTYPE html><html lang="fr"><head>
+  <link rel="manifest" href="../manifest.json">
+  <meta name="theme-color" content="#1D3557"><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Mes Notes — ITP University</title>
+<link rel="stylesheet" href="../assets/css/style.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+<link rel="icon" href="../assets/images/icon-192.png"></head><body>
+<div class="dashboard-layout">
+<aside role="complementary" aria-label="Menu de navigation" style="width:250px;background-color:var(--dark-blue);color:white;padding:20px;min-height:100vh;flex-shrink:0;">
+  <h3 style="color:white;border-bottom:1px solid rgba(255,255,255,0.1);padding-bottom:10px;">Espace Étudiant</h3>
+  <nav role="navigation" aria-label="Navigation principale" style="display:flex;flex-direction:column;gap:10px;margin-top:20px;">
+    <a href="index.html"           class="nav-link"><i class="fas fa-home"></i> Tableau de bord</a>
+    <a href="notes.html"           class="nav-link"><i class="fas fa-graduation-cap"></i> Mes Notes</a>
+    <a href="emploi_du_temps.html" class="nav-link"><i class="fas fa-calendar-alt"></i> Emploi du temps</a>
+    <a href="paiements.html"       class="nav-link"><i class="fas fa-wallet"></i> Paiements</a>
+    <a href="documents.html"       class="nav-link"><i class="fas fa-file-alt"></i> Mes Documents</a>
+    <a href="carte_numerique.html" class="nav-link"><i class="fas fa-id-card"></i> Carte Numérique</a>
+    <a href="reclamations.html"    class="nav-link"><i class="fas fa-exclamation-circle"></i> Réclamations</a>
+    <a href="profil.html"          class="nav-link"><i class="fas fa-user"></i> Mon Profil</a>
+    <a href="#" onclick="if(confirm('Se déconnecter ?')){localStorage.clear();window.location='../auth/login.html';}" class="nav-link"><i class="fas fa-sign-out-alt"></i> Déconnexion</a>
+  </nav>
+</aside>
+<main role="main" id="main-content" style="flex:1;padding:40px;background:#f8f9fa;">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:30px;flex-wrap:wrap;gap:15px;">
+    <h2 class="m-0">Mes Notes & Résultats</h2>
+    <div class="d-flex gap-10">
+      <select id="year-filter" style="padding:8px;border:1px solid var(--light-grey);border-radius:5px;" onchange="loadNotes()">
+        <option value="2025-2026">2025–2026</option>
+        <option value="2024-2025">2024–2025</option>
+      </select>
+      <button class="btn-outline" onclick="printNotes()"><i class="fas fa-print"></i> Imprimer</button>
+    </div>
+  </div>
+
+  <!-- Moyenne générale -->
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:20px;margin-bottom:30px;">
+    <div class="card" style="text-align:center;border-top:4px solid var(--dark-blue);">
+      <p class="text-muted-sm m-0">Moyenne Générale</p>
+      <h2 id="moy-generale" style="font-size:2.5rem;margin:10px 0;color:var(--dark-blue);">—</h2>
+      <p id="mention" style="margin:0;font-weight:bold;"></p>
+    </div>
+    <div class="card" style="text-align:center;border-top:4px solid #28a745;">
+      <p class="text-muted-sm m-0">Crédits ECTS validés</p>
+      <h2 id="credits-val" style="font-size:2.5rem;margin:10px 0;color:#28a745;">—</h2>
+      <p style="margin:0;color:#666;font-size:0.85rem;">/ 60 crédits</p>
+    </div>
+    <div class="card" style="text-align:center;border-top:4px solid #ffc107;">
+      <p class="text-muted-sm m-0">Rang dans la promo</p>
+      <h2 style="font-size:2.5rem;margin:10px 0;color:#ffc107;">3<sup style="font-size:1rem;">e</sup></h2>
+      <p style="margin:0;color:#666;font-size:0.85rem;">sur 45 étudiants</p>
+    </div>
+    <div class="card" style="text-align:center;border-top:4px solid var(--red-itp);">
+      <p class="text-muted-sm m-0">Statut</p>
+      <h2 id="statut-global" style="font-size:1.5rem;margin:10px 0;">—</h2>
+    </div>
+  </div>
+
+  <!-- Tableau des notes par UE -->
+  <div class="card" class="mb-30">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:15px;">
+      <h3 class="m-0">Notes par matière</h3>
+      <span id="notes-status" class="text-muted-sm"><i class="fas fa-spinner fa-spin" aria-hidden="true"></i><span class="sr-only">Chargement en cours</span> Chargement...</span>
+    </div>
+    <div style="overflow-x:auto;">
+      <table style="width:100%;border-collapse:collapse;min-width:600px;">
+        <thead>
+          <tr style="background:var(--dark-blue);color:white;text-align:left;">
+            <th style="padding:12px;">Matière</th>
+            <th style="padding:12px;text-align:center;">DST<br><small>(30%)</small></th>
+            <th style="padding:12px;text-align:center;">TP<br><small>(20%)</small></th>
+            <th style="padding:12px;text-align:center;">Session<br><small>(50/70%)</small></th>
+            <th style="padding:12px;text-align:center;">Rattrapage</th>
+            <th style="padding:12px;text-align:center;">Moyenne</th>
+            <th style="padding:12px;text-align:center;">Crédits</th>
+            <th style="padding:12px;text-align:center;">Statut</th>
+          </tr>
+        </thead>
+        <tbody id="notes-tbody">
+          <tr><td colspan="8" style="padding:30px;text-align:center;color:#999;">Chargement des notes...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Bulletin de notes (format imprimable) -->
+  <div class="card" id="bulletin-section" class="d-none">
+    <div style="text-align:center;border-bottom:2px solid var(--dark-blue);padding-bottom:15px;margin-bottom:20px;">
+      <h3>RELEVÉ DE NOTES OFFICIEL</h3>
+      <p>Institut Technique Polytechnique (ITP) — Brazzaville, Congo</p>
+      <p id="bulletin-student"></p>
+      <p>Année académique : <strong id="bulletin-year"></strong></p>
+    </div>
+    <div id="bulletin-content"></div>
+    <div style="margin-top:30px;display:flex;justify-content:space-between;">
+      <div style="text-align:center;width:200px;border-top:1px solid #333;padding-top:5px;">Signature du Directeur</div>
+      <div style="text-align:center;width:200px;border-top:1px solid #333;padding-top:5px;">Cachet de l'ITP</div>
+    </div>
+  </div>
+
+  <div style="display:flex;gap:10px;flex-wrap:wrap;">
+    <button class="btn-primary" onclick="showBulletin()"><i class="fas fa-file-alt"></i> Générer bulletin PDF</button>
+    <a href="reclamations.html" class="btn-outline"><i class="fas fa-exclamation-circle"></i> Contester une note</a>
+  </div>
+</main>
+</div>
+<script src="../assets/js/auth-guard.js" data-role="student"></script>
+<script src="../assets/js/main.js"></script>
+<script src="../assets/js/config.js"></script>
+<script src="../assets/js/api.js"></script>
+<script src="../assets/js/utils.js"></script>
+<script src="../assets/js/tests.js"></script>
+<script src="../assets/js/components.js"></script>
+<script>
+const FALLBACK_NOTES = [
+  { course_name:'Algorithmique',    dst_grade:14,   tp_grade:null, session_grade:12,   final_grade:12.60, status:'Admis',  credits:6 },
+  { course_name:'Base de données',  dst_grade:16,   tp_grade:15,   session_grade:15,   final_grade:15.30, status:'Admis',  credits:4 },
+  { course_name:'Réseaux Mobiles',  dst_grade:13,   tp_grade:null, session_grade:14,   final_grade:13.70, status:'Admis',  credits:4 },
+  { course_name:'Développement Web',dst_grade:15,   tp_grade:16,   session_grade:14,   final_grade:14.90, status:'Admis',  credits:4 },
+  { course_name:'Mathématiques',    dst_grade:10,   tp_grade:null, session_grade:8,    final_grade:8.60,  status:'Compensable', credits:4 },
+  { course_name:'Anglais Technique',dst_grade:17,   tp_grade:null, session_grade:16,   final_grade:16.30, status:'Admis',  credits:2 },
+];
+
+const MENTIONS = [
+  [16,'Très Bien','#28a745'], [14,'Bien','#5cb85c'],
+  [12,'Assez Bien','#f0ad4e'], [10,'Passable','#ffc107'], [0,'Insuffisant','var(--red-itp)']
+];
+
+async function loadNotes() {
+  const user = ITP_API.auth.currentUser();
+  let notes;
+  try {
+    notes = await ITP_API.grades.getByStudent(user?.student_id || 1);
+    if (!notes || !notes.length) notes = FALLBACK_NOTES;
+  } catch { notes = FALLBACK_NOTES; }
+  renderNotes(notes);
+}
+
+function renderNotes(notes) {
+  document.getElementById('notes-status').textContent = `${notes.length} matière(s)`;
+  let total = 0, count = 0, creditsVal = 0;
+
+  const rows = notes.map(n => {
+    const moy    = parseFloat(n.final_grade || ITP_API.grades.calculate(n.dst_grade, n.session_grade, n.tp_grade));
+    const st     = ITP_API.grades.status(moy);
+    const cred   = n.credits || 4;
+    if (moy >= 10) creditsVal += cred;
+    total += moy; count++;
+    const dst  = n.dst_grade    != null ? n.dst_grade    + '/20' : '—';
+    const tp   = n.tp_grade     != null ? n.tp_grade     + '/20' : '—';
+    const sess = n.session_grade!= null ? n.session_grade+ '/20' : '—';
+    const rat  = n.resit_grade  != null ? n.resit_grade  + '/20' : '—';
+    return `<tr style="border-bottom:1px solid var(--light-grey);">
+      <td style="padding:12px;font-weight:500;">${n.course_name}</td>
+      <td style="padding:12px;text-align:center;">${dst}</td>
+      <td style="padding:12px;text-align:center;">${tp}</td>
+      <td style="padding:12px;text-align:center;">${sess}</td>
+      <td style="padding:12px;text-align:center;">${rat}</td>
+      <td style="padding:12px;text-align:center;font-weight:bold;">${moy.toFixed(2)}</td>
+      <td style="padding:12px;text-align:center;">${cred}</td>
+      <td style="padding:12px;text-align:center;"><span style="color:${st.color};font-weight:bold;">${n.status || st.label}</span></td>
+    </tr>`;
+  }).join('');
+
+  document.getElementById('notes-tbody').innerHTML = rows;
+
+  if (count > 0) {
+    const avg = (total / count);
+    document.getElementById('moy-generale').textContent = avg.toFixed(2);
+    document.getElementById('credits-val').textContent  = creditsVal;
+    const [,mention,color] = MENTIONS.find(([seuil]) => avg >= seuil);
+    document.getElementById('mention').innerHTML = `<span style="color:${color};">${mention}</span>`;
+    const stGlobal = ITP_API.grades.status(avg);
+    document.getElementById('statut-global').innerHTML = `<span style="color:${stGlobal.color};">${stGlobal.label}</span>`;
+  }
+}
+
+function showBulletin() {
+  const user = ITP_API.auth.currentUser();
+  const sec  = document.getElementById('bulletin-section');
+  sec.style.display = 'block';
+  document.getElementById('bulletin-student').innerHTML = `<strong>${user?.name || 'JEAN DUPONT'}</strong> — N° : ITP-2026-0452`;
+  document.getElementById('bulletin-year').textContent  = document.getElementById('year-filter').value;
+  document.getElementById('bulletin-content').innerHTML = document.getElementById('notes-tbody').innerHTML;
+  sec.scrollIntoView({ behavior:'smooth' });
+  setTimeout(() => window.print(), 500);
+}
+function printNotes() { window.print(); }
+
+loadNotes();
+</script>
+
+<script>
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('../sw.js').catch(() => {});
+}
+</script>
+
+<!-- PWA Banner -->
+<div id="pwa-banner">
+  <div class="d-flex align-center gap-12">
+    <img src="../assets/images/icon-192.png" style="width:36px;height:36px;border-radius:8px;">
+    <div><strong>ITP University</strong><br><small>Installer l'application sur votre appareil</small></div>
+  </div>
+  <div class="d-flex gap-10">
+    <button onclick="installPWA()" style="background:white;color:var(--dark-blue);border:none;padding:8px 16px;border-radius:5px;cursor:pointer;font-weight:bold;">Installer</button>
+    <button onclick="dismissPWA()" style="background:none;border:none;color:rgba(255,255,255,0.7);cursor:pointer;font-size:1.2rem;">&#x2715;</button>
+  </div>
+</div>
+</body></html>

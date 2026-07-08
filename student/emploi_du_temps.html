@@ -1,0 +1,253 @@
+<!DOCTYPE html><html lang="fr"><head>
+  <link rel="manifest" href="../manifest.json">
+  <meta name="theme-color" content="#1D3557"><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Emploi du temps — ITP University</title>
+<link rel="stylesheet" href="../assets/css/style.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+<link rel="icon" href="../assets/images/icon-192.png"></head><body>
+<div class="dashboard-layout">
+<aside role="complementary" aria-label="Menu de navigation" style="width:250px;background-color:var(--dark-blue);color:white;padding:20px;min-height:100vh;flex-shrink:0;">
+  <h3 style="color:white;border-bottom:1px solid rgba(255,255,255,0.1);padding-bottom:10px;">Espace Étudiant</h3>
+  <nav role="navigation" aria-label="Navigation principale" style="display:flex;flex-direction:column;gap:10px;margin-top:20px;">
+    <a href="index.html"           class="nav-link"><i class="fas fa-home"></i> Tableau de bord</a>
+    <a href="notes.html"           class="nav-link"><i class="fas fa-graduation-cap"></i> Mes Notes</a>
+    <a href="emploi_du_temps.html" class="nav-link active"><i class="fas fa-calendar-alt"></i> Emploi du temps</a>
+    <a href="paiements.html"       class="nav-link"><i class="fas fa-wallet"></i> Paiements</a>
+    <a href="documents.html"       class="nav-link"><i class="fas fa-file-alt"></i> Mes Documents</a>
+    <a href="carte_numerique.html" class="nav-link"><i class="fas fa-id-card"></i> Carte Numérique</a>
+    <a href="reclamations.html"    class="nav-link"><i class="fas fa-exclamation-circle"></i> Réclamations</a>
+    <a href="profil.html"          class="nav-link"><i class="fas fa-user"></i> Mon Profil</a>
+    <a href="#" onclick="if(confirm('Se déconnecter ?')){localStorage.clear();window.location='../auth/login.html';}" class="nav-link"><i class="fas fa-sign-out-alt"></i> Déconnexion</a>
+  </nav>
+</aside>
+<main role="main" id="main-content" style="flex:1;padding:40px;background:#f8f9fa;">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:30px;flex-wrap:wrap;gap:15px;">
+    <h2 class="m-0">Emploi du Temps</h2>
+    <div style="display:flex;gap:10px;align-items:center;">
+      <button onclick="prevWeek()" class="btn-outline" style="padding:8px 14px;"><i class="fas fa-chevron-left"></i></button>
+      <span id="week-label" style="font-weight:bold;min-width:200px;text-align:center;"></span>
+      <button onclick="nextWeek()" class="btn-outline" style="padding:8px 14px;"><i class="fas fa-chevron-right"></i></button>
+      <button onclick="goToday()"  class="btn-primary" style="padding:8px 14px;">Aujourd'hui</button>
+    </div>
+  </div>
+
+  <!-- Grille calendrier -->
+  <div class="card" style="padding:0;overflow:hidden;">
+    <div style="display:grid;grid-template-columns:80px repeat(5,1fr);background:var(--dark-blue);color:white;">
+      <div style="padding:12px;text-align:center;font-size:0.8rem;">Heure</div>
+      <div id="head-lun" style="padding:12px;text-align:center;font-size:0.85rem;"></div>
+      <div id="head-mar" style="padding:12px;text-align:center;font-size:0.85rem;"></div>
+      <div id="head-mer" style="padding:12px;text-align:center;font-size:0.85rem;"></div>
+      <div id="head-jeu" style="padding:12px;text-align:center;font-size:0.85rem;"></div>
+      <div id="head-ven" style="padding:12px;text-align:center;font-size:0.85rem;"></div>
+    </div>
+    <div id="calendar-grid" style="display:grid;grid-template-columns:80px repeat(5,1fr);min-height:500px;">
+      <div style="padding:20px;text-align:center;color:#999;grid-column:1/-1;"><i class="fas fa-spinner fa-spin" aria-hidden="true"></i><span class="sr-only">Chargement en cours</span> Chargement...</div>
+    </div>
+  </div>
+
+  <!-- Prochain cours -->
+  <div class="card" class="mt-30">
+    <h3>Prochain cours</h3>
+    <div id="next-class" style="margin-top:15px;padding:15px;background:#eef2f7;border-left:4px solid var(--dark-blue);border-radius:0 5px 5px 0;">
+      <p style="color:#999;">Chargement...</p>
+    </div>
+  </div>
+
+  <!-- Liste vue semaine -->
+  <div class="card" class="mt-30">
+    <h3>Vue liste — cette semaine</h3>
+    <div id="week-list" class="mt-15">
+      <p style="color:#999;">Chargement...</p>
+    </div>
+  </div>
+</main>
+</div>
+<script src="../assets/js/auth-guard.js" data-role="student"></script>
+<script src="../assets/js/main.js"></script>
+<script src="../assets/js/config.js"></script>
+<script src="../assets/js/api.js"></script>
+<script src="../assets/js/utils.js"></script>
+<script src="../assets/js/tests.js"></script>
+<script src="../assets/js/components.js"></script>
+<script>
+const JOURS   = ['Lundi','Mardi','Mercredi','Jeudi','Vendredi'];
+const HOURS   = ['07:00','08:00','09:00','10:00','11:00','12:00','13:00','14:00','15:00','16:00','17:00','18:00'];
+const COLORS  = ['#1D3557','#e63946','#2a9d8f','#e9c46a','#457b9d','#264653'];
+
+const FALLBACK_SCHEDULE = [
+  { id:1, course_name:'Algorithmique', room:'Salle 101', professor:'Prof. Moukoko', day:1, start:'08:00', end:'10:00', color:COLORS[0] },
+  { id:2, course_name:'Base de données', room:'Salle 204', professor:'Prof. Martin', day:2, start:'14:00', end:'16:00', color:COLORS[1] },
+  { id:3, course_name:'Réseaux Mobiles', room:'Salle B1', professor:'Prof. Nguimbi', day:3, start:'08:00', end:'10:00', color:COLORS[2] },
+  { id:4, course_name:'Développement Web', room:'Salle 204', professor:'Prof. Moukoko', day:4, start:'10:00', end:'12:00', color:COLORS[3] },
+  { id:5, course_name:'Mathématiques', room:'Amphi A', professor:'Prof. Louzolo', day:5, start:'07:00', end:'09:00', color:COLORS[4] },
+  { id:6, course_name:'Anglais Technique', room:'Salle 101', professor:'Prof. Ibara', day:1, start:'14:00', end:'16:00', color:COLORS[5] },
+];
+
+let currentWeekOffset = 0;
+let allSlots = [];
+
+function getWeekDates(offset = 0) {
+  const now   = new Date();
+  const day   = now.getDay() || 7;
+  const mon   = new Date(now);
+  mon.setDate(now.getDate() - day + 1 + offset * 7);
+  return Array.from({length:5}, (_,i) => { const d = new Date(mon); d.setDate(mon.getDate()+i); return d; });
+}
+
+function formatDate(d) {
+  return d.toLocaleDateString('fr-FR', { weekday:'short', day:'2-digit', month:'short' });
+}
+
+function renderHeaders(dates) {
+  const ids = ['lun','mar','mer','jeu','ven'];
+  const today = new Date().toDateString();
+  dates.forEach((d,i) => {
+    const el = document.getElementById(`head-${ids[i]}`);
+    const isToday = d.toDateString() === today;
+    el.innerHTML = `<strong>${JOURS[i]}</strong><br><small style="opacity:0.8;">${d.getDate()}/${d.getMonth()+1}</small>`;
+    el.style.background = isToday ? 'rgba(255,255,255,0.2)' : '';
+  });
+  const fmt = d => `${d.getDate()}/${d.getMonth()+1}/${d.getFullYear()}`;
+  document.getElementById('week-label').textContent = `Semaine du ${fmt(dates[0])} au ${fmt(dates[4])}`;
+}
+
+function renderGrid(slots) {
+  const grid = document.getElementById('calendar-grid');
+  grid.innerHTML = '';
+
+  // Lignes horaires
+  HOURS.forEach(h => {
+    // Colonne heure
+    const timeCell = document.createElement('div');
+    timeCell.style.cssText = 'padding:5px 8px;font-size:0.75rem;color:#999;border-top:1px solid #eee;border-right:1px solid #eee;display:flex;align-items:flex-start;';
+    timeCell.textContent = h;
+    grid.appendChild(timeCell);
+
+    // 5 colonnes jour
+    for (let day = 1; day <= 5; day++) {
+      const cell = document.createElement('div');
+      cell.style.cssText = 'border-top:1px solid #eee;border-right:1px solid #eee;min-height:50px;position:relative;padding:2px;';
+      // Chercher un cours pour ce jour/heure
+      const slot = slots.find(s => s.day === day && s.start === h);
+      if (slot) {
+        const duration = calcDuration(slot.start, slot.end);
+        const block    = document.createElement('div');
+        block.style.cssText = `background:${slot.color};color:white;border-radius:5px;padding:6px;font-size:0.75rem;cursor:pointer;`;
+        block.style.minHeight = `${duration * 50 - 6}px`;
+        block.innerHTML = `<strong>${slot.course_name}</strong><br>${slot.room}<br><i>${slot.start}–${slot.end}</i>`;
+        block.title     = `${slot.course_name} | ${slot.professor} | ${slot.room}`;
+        block.onclick   = () => showCourseDetail(slot);
+        cell.appendChild(block);
+      }
+      grid.appendChild(cell);
+    }
+  });
+}
+
+function calcDuration(start, end) {
+  const [sh,sm] = start.split(':').map(Number);
+  const [eh,em] = end.split(':').map(Number);
+  return (eh * 60 + em - sh * 60 - sm) / 60;
+}
+
+function showCourseDetail(slot) {
+  alert(`📚 ${slot.course_name}\n👨‍🏫 ${slot.professor}\n🏫 ${slot.room}\n⏰ ${slot.start} – ${slot.end}`);
+}
+
+function parseAPISlots(data) {
+  return data.map((s, i) => {
+    const start = s.start_time ? new Date(s.start_time) : null;
+    const end   = s.end_time   ? new Date(s.end_time)   : null;
+    const dayJs = start ? (start.getDay() || 7) : (i % 5) + 1;
+    return {
+      id:          s.id,
+      course_name: s.courses?.name || s.course_name || 'Cours',
+      room:        s.rooms?.name   || s.room        || '—',
+      professor:   s.courses?.professors ? `${s.courses.professors.first_name} ${s.courses.professors.last_name}` : '—',
+      day:         dayJs,
+      start:       start ? `${String(start.getHours()).padStart(2,'0')}:${String(start.getMinutes()).padStart(2,'0')}` : '08:00',
+      end:         end   ? `${String(end.getHours()).padStart(2,'0')}:${String(end.getMinutes()).padStart(2,'0')}` : '10:00',
+      color:       COLORS[i % COLORS.length]
+    };
+  });
+}
+
+function renderWeekList(slots, dates) {
+  const el = document.getElementById('week-list');
+  if (!slots.length) { el.innerHTML = '<p style="color:#999;">Aucun cours cette semaine.</p>'; return; }
+  const grouped = {};
+  slots.forEach(s => {
+    if (!grouped[s.day]) grouped[s.day] = [];
+    grouped[s.day].push(s);
+  });
+  el.innerHTML = Object.entries(grouped).sort(([a],[b])=>a-b).map(([day,items]) => `
+    <div class="mb-15">
+      <h4 style="margin:0 0 8px;color:var(--dark-blue);">${JOURS[day-1]} ${dates[day-1]?.toLocaleDateString('fr-FR',{day:'2-digit',month:'long'})}</h4>
+      ${items.map(s=>`
+        <div style="display:flex;align-items:center;gap:12px;padding:10px;background:white;border-radius:6px;border-left:4px solid ${s.color};margin-bottom:6px;">
+          <span style="font-size:0.85rem;color:#666;min-width:90px;">${s.start} – ${s.end}</span>
+          <div>
+            <strong>${s.course_name}</strong>
+            <span style="color:#666;font-size:0.85rem;"> | ${s.room} | ${s.professor}</span>
+          </div>
+        </div>`).join('')}
+    </div>`).join('');
+}
+
+function renderNextClass(slots) {
+  const el    = document.getElementById('next-class');
+  const now   = new Date();
+  const dayNow = now.getDay() || 7;
+  const timeNow = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
+  const next  = slots.find(s => s.day > dayNow || (s.day === dayNow && s.start > timeNow));
+  if (next) {
+    el.innerHTML = `<p style="margin:0;font-weight:bold;">${next.course_name}</p>
+      <p style="margin:5px 0;color:#666;font-size:0.9rem;">${JOURS[next.day-1]} ${next.start}–${next.end} | ${next.room}</p>
+      <p style="margin:0;font-size:0.9rem;">Professeur : ${next.professor}</p>`;
+  } else {
+    el.innerHTML = '<p style="color:#666;">Aucun cours à venir cette semaine.</p>';
+  }
+}
+
+async function loadSchedule() {
+  const user   = ITP_API.auth.currentUser();
+  const dates  = getWeekDates(currentWeekOffset);
+  renderHeaders(dates);
+  try {
+    const data = await ITP_API.schedules.getForStudent(user?.student_id || 1);
+    allSlots   = parseAPISlots(data.length ? data : []);
+    if (!allSlots.length) allSlots = FALLBACK_SCHEDULE;
+  } catch {
+    allSlots = FALLBACK_SCHEDULE;
+  }
+  renderGrid(allSlots);
+  renderWeekList(allSlots, dates);
+  renderNextClass(allSlots);
+}
+
+function prevWeek() { currentWeekOffset--; loadSchedule(); }
+function nextWeek() { currentWeekOffset++; loadSchedule(); }
+function goToday()  { currentWeekOffset = 0; loadSchedule(); }
+
+loadSchedule();
+</script>
+
+<script>
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('../sw.js').catch(() => {});
+}
+</script>
+
+<!-- PWA Banner -->
+<div id="pwa-banner">
+  <div class="d-flex align-center gap-12">
+    <img src="../assets/images/icon-192.png" style="width:36px;height:36px;border-radius:8px;">
+    <div><strong>ITP University</strong><br><small>Installer l'application sur votre appareil</small></div>
+  </div>
+  <div class="d-flex gap-10">
+    <button onclick="installPWA()" style="background:white;color:var(--dark-blue);border:none;padding:8px 16px;border-radius:5px;cursor:pointer;font-weight:bold;">Installer</button>
+    <button onclick="dismissPWA()" style="background:none;border:none;color:rgba(255,255,255,0.7);cursor:pointer;font-size:1.2rem;">&#x2715;</button>
+  </div>
+</div>
+</body></html>

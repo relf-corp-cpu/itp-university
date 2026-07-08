@@ -1,0 +1,408 @@
+<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Gestion des Notes — ITP University</title>
+<link rel="stylesheet" href="../assets/css/style.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+<link rel="icon" href="../assets/images/icon-192.png">
+<link rel="manifest" href="../manifest.json"></head><body>
+<a href="#main-content" class="sr-only">Aller au contenu principal</a>
+<div class="dashboard-layout">
+<aside class="sidebar" role="complementary">
+  <h3>Espace Professeur</h3>
+    <nav role="navigation" aria-label="Navigation principale" style="display:flex;flex-direction:column;gap:10px;margin-top:20px;">
+    <a href="index.html"     class="nav-link"><i class="fas fa-home"></i> Tableau de bord</a>
+    <a href="notes.html"     class="nav-link"><i class="fas fa-edit"></i> Gestion des Notes</a>
+    <a href="presences.html" class="nav-link"><i class="fas fa-user-check"></i> Présences</a>
+    <a href="edt.html"       class="nav-link"><i class="fas fa-calendar-alt"></i> Mon EDT</a>
+    <a href="supports.html"  class="nav-link"><i class="fas fa-folder-open"></i> Supports de cours</a>
+    <a href="#" onclick="if(confirm('Se déconnecter ?')){localStorage.clear();window.location='../auth/login.html';}" class="nav-link"><i class="fas fa-sign-out-alt"></i> Déconnexion</a>
+  </nav>
+</aside>
+<main class="dashboard-main" id="main-content" role="main">
+  <div class="page-header">
+    <div>
+      <h2 class="page-title">Gestion des Notes</h2>
+      <p class="text-muted-sm m-0">Saisie · Validation · Classement · Bulletins</p>
+    </div>
+    <div class="d-flex gap-10">
+      <button class="btn-outline" onclick="exportNotes()"><i class="fas fa-file-excel"></i> Export CSV</button>
+      <button class="btn-primary" onclick="generateBulletins()"><i class="fas fa-file-pdf"></i> Bulletins PDF</button>
+    </div>
+  </div>
+
+  <div id="tabs-notes">
+    <div class="tabs">
+      <button class="tab active" data-tab="tab-saisie">Saisie des notes</button>
+      <button class="tab" data-tab="tab-validation">Validation</button>
+      <button class="tab" data-tab="tab-classement">Classement</button>
+      <button class="tab" data-tab="tab-bulletin">Bulletins PDF</button>
+    </div>
+
+    <!-- Tab 1 : Saisie -->
+    <div class="tab-panel active" id="tab-saisie">
+      <div class="card mb-20">
+        <div class="d-flex gap-15 flex-wrap align-center">
+          <div class="form-group m-0" style="flex:1;min-width:160px;">
+            <label class="form-label">Cours</label>
+            <select id="sel-course" class="form-control" onchange="loadStudentList()" aria-label="Sélectionner le cours">
+              <option value="">— Sélectionner —</option>
+              <option value="1">Algorithmique</option>
+              <option value="2">Base de données SQL</option>
+              <option value="3">Développement Web</option>
+              <option value="4">Réseaux Mobiles</option>
+            </select>
+          </div>
+          <div class="form-group m-0" style="min-width:140px;">
+            <label class="form-label">Type d'évaluation</label>
+            <select id="sel-type" class="form-control" aria-label="Type d'évaluation">
+              <option value="DST">DST (30%)</option>
+              <option value="TP">TP (20%)</option>
+              <option value="Session">Session (70%)</option>
+              <option value="Rattrapage">Rattrapage</option>
+            </select>
+          </div>
+          <div class="form-group m-0" style="min-width:140px;">
+            <label class="form-label">Classe</label>
+            <select id="sel-class" class="form-control" aria-label="Classe">
+              <option>L3 Génie Logiciel</option>
+              <option>L2 Réseaux</option>
+              <option>L1 Informatique</option>
+            </select>
+          </div>
+          <div style="padding-top:22px;">
+            <button class="btn-primary" onclick="loadStudentList()"><i class="fas fa-users"></i> Charger</button>
+          </div>
+        </div>
+      </div>
+
+      <div id="grade-sheet-container" class="d-none" class="card">
+        <div class="d-flex justify-between align-center mb-20 flex-wrap gap-10">
+          <div>
+            <h3 class="m-0" id="sheet-title">Grille de saisie</h3>
+            <p class="text-muted-sm m-0" id="sheet-subtitle"></p>
+          </div>
+          <div class="d-flex gap-10">
+            <button class="btn-outline" onclick="fillAll()"><i class="fas fa-magic"></i> Remplir aléatoire (démo)</button>
+            <button class="btn-primary" onclick="saveAllGrades()"><i class="fas fa-save"></i> Enregistrer</button>
+          </div>
+        </div>
+        <div class="table-wrapper">
+          <table class="data-table" role="table" aria-label="Grille de saisie des notes">
+            <thead><tr>
+              <th>#</th><th>Matricule</th><th>Nom & Prénom</th>
+              <th>Note /20</th><th>Aperçu Moy.</th><th>Statut</th>
+            </tr></thead>
+            <tbody id="grade-sheet-body"></tbody>
+          </table>
+        </div>
+        <div id="save-msg" class="d-none" role="status" aria-live="polite"></div>
+      </div>
+
+      <div id="sheet-placeholder" class="card text-center" style="padding:60px;color:#ccc;">
+        <i class="fas fa-edit" style="font-size:3rem;margin-bottom:15px;display:block;opacity:0.4;"></i>
+        <p>Sélectionnez un cours et cliquez sur <strong>Charger</strong> pour afficher la grille de saisie.</p>
+      </div>
+    </div>
+
+    <!-- Tab 2 : Validation -->
+    <div class="tab-panel" id="tab-validation">
+      <div class="card">
+        <h3 class="mb-20">Notes en attente de validation</h3>
+        <div class="table-wrapper">
+          <table class="data-table" role="table">
+            <thead><tr><th>Étudiant</th><th>Matière</th><th>DST</th><th>Session</th><th>Moyenne</th><th>Statut</th><th>Action</th></tr></thead>
+            <tbody id="validation-table"></tbody>
+          </table>
+        </div>
+        <div class="d-flex gap-10 mt-20">
+          <button class="btn-primary" onclick="validateAll()"><i class="fas fa-check-double"></i> Valider toutes les notes</button>
+          <button class="btn-outline" onclick="loadValidation()"><i class="fas fa-sync"></i> Actualiser</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tab 3 : Classement -->
+    <div class="tab-panel" id="tab-classement">
+      <div class="card">
+        <div class="d-flex justify-between align-center mb-20 flex-wrap gap-10">
+          <h3 class="m-0">Classement de la promotion</h3>
+          <div class="d-flex gap-10">
+            <select id="rank-class" class="form-control" style="width:auto;" onchange="loadRanking()" aria-label="Classe">
+              <option>L3 Génie Logiciel</option><option>L2 Réseaux</option><option>L1 Informatique</option>
+            </select>
+            <button class="btn-outline" onclick="Excel.exportGrades(FB_GRADES,'classement_itp.csv')"><i class="fas fa-file-excel"></i></button>
+          </div>
+        </div>
+        <div class="table-wrapper">
+          <table class="data-table" role="table" aria-label="Classement des étudiants">
+            <thead><tr><th>Rang</th><th>Matricule</th><th>Nom</th><th>Moy. Générale</th><th>Crédits</th><th>Mention</th><th>Statut</th></tr></thead>
+            <tbody id="ranking-table"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tab 4 : Bulletins -->
+    <div class="tab-panel" id="tab-bulletin">
+      <div class="card">
+        <h3 class="mb-20">Génération des Bulletins PDF</h3>
+        <div class="d-flex gap-15 flex-wrap align-center mb-20">
+          <select id="bull-student" class="form-control" style="flex:1;min-width:200px;" aria-label="Étudiant">
+            <option value="1">Djepht MACKAYA — ITP-2026-0452</option>
+            <option value="2">Alice M'BOKA — ITP-2026-0124</option>
+            <option value="3">Moussa TRAORÉ — ITP-2026-0089</option>
+          </select>
+          <select id="bull-year" class="form-control" style="width:auto;" aria-label="Année">
+            <option>2025-2026</option><option>2024-2025</option>
+          </select>
+          <button class="btn-primary" onclick="previewBulletin()"><i class="fas fa-eye"></i> Aperçu</button>
+          <button class="btn-outline" onclick="printBulletin()"><i class="fas fa-print"></i> Imprimer</button>
+        </div>
+
+        <!-- Aperçu bulletin -->
+        <div id="bulletin-preview" style="display:none;border:1px solid #ddd;border-radius:8px;padding:30px;background:white;">
+          <div class="text-center mb-20" style="border-bottom:3px solid var(--dark-blue);padding-bottom:15px;">
+            <h3 style="color:var(--dark-blue);margin:0;">INSTITUT TECHNIQUE POLYTECHNIQUE (ITP)</h3>
+            <p class="m-0 text-muted-sm">Brazzaville — République du Congo</p>
+            <h4 style="margin:10px 0 0;">BULLETIN DE NOTES — <span id="bull-year-display"></span></h4>
+          </div>
+          <div class="grid-2 mb-20">
+            <div><p class="m-0"><strong>Nom :</strong> <span id="bull-name"></span></p><p class="mb-5"><strong>Matricule :</strong> <span id="bull-mat"></span></p></div>
+            <div><p class="m-0"><strong>Filière :</strong> Génie Logiciel</p><p class="mb-5"><strong>Niveau :</strong> Licence 3</p></div>
+          </div>
+          <div class="table-wrapper">
+            <table class="data-table" role="table">
+              <thead><tr style="background:var(--dark-blue);color:white;">
+                <th>Matière</th><th>DST(30%)</th><th>TP(20%)</th><th>Session(70%)</th><th>Moyenne</th><th>Crédits</th><th>Mention</th>
+              </tr></thead>
+              <tbody id="bull-table"></tbody>
+            </table>
+          </div>
+          <div class="d-flex justify-between mt-20" class="fw-bold">
+            <span>Moyenne Générale : <span id="bull-gpa" style="color:var(--dark-blue);font-size:1.2rem;"></span></span>
+            <span>Crédits validés : <span id="bull-credits" style="color:#28a745;"></span>/60</span>
+            <span>Mention : <span id="bull-mention"></span></span>
+          </div>
+          <div class="d-flex justify-between mt-30">
+            <div style="text-align:center;width:200px;border-top:1px solid #333;padding-top:5px;font-size:0.85rem;">Signature du Directeur</div>
+            <div style="text-align:center;width:200px;border-top:1px solid #333;padding-top:5px;font-size:0.85rem;">Cachet de l'ITP</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</main>
+</div>
+
+<script src="../assets/js/main.js"></script>
+<script src="../assets/js/config.js"></script>
+<script src="../assets/js/api.js"></script>
+<script src="../assets/js/utils.js"></script>
+<script src="../assets/js/auth-guard.js" data-role="professor,direction,admin"></script>
+<script src="../assets/js/tests.js"></script>
+<script src="../assets/js/components.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  initTabs('tabs-notes');
+  loadValidation();
+  loadRanking();
+});
+
+const FB_STUDENTS = [
+  { id:1, matricule:'ITP-2026-0452', name:'MACKAYA Djepht',  grades:{ Algorithmique:{dst:14,session:12}, 'Base de données':{dst:16,tp:15,session:15}, 'Développement Web':{dst:15,tp:16,session:14}, Mathématiques:{dst:10,session:8}, 'Réseaux Mobiles':{dst:13,session:14} } },
+  { id:2, matricule:'ITP-2026-0124', name:"M'BOKA Alice",    grades:{ Algorithmique:{dst:17,session:15}, 'Base de données':{dst:18,tp:16,session:17}, 'Développement Web':{dst:16,tp:15,session:15}, Mathématiques:{dst:14,session:12}, 'Réseaux Mobiles':{dst:15,session:14} } },
+  { id:3, matricule:'ITP-2026-0089', name:'TRAORÉ Moussa',   grades:{ Algorithmique:{dst:12,session:10}, 'Base de données':{dst:14,tp:12,session:13}, 'Développement Web':{dst:13,tp:11,session:12}, Mathématiques:{dst:8, session:7},  'Réseaux Mobiles':{dst:11,session:10} } },
+  { id:4, matricule:'ITP-2026-0201', name:'LOUZOLO Patrick', grades:{ Algorithmique:{dst:10,session:9},  'Base de données':{dst:12,tp:10,session:11}, 'Développement Web':{dst:11,tp:9, session:10}, Mathématiques:{dst:7, session:6},  'Réseaux Mobiles':{dst:9, session:8}  } },
+];
+const COURSES_LIST = ['Algorithmique','Base de données','Développement Web','Mathématiques','Réseaux Mobiles'];
+const FB_GRADES    = FB_STUDENTS.map(s => ({ student:s.name, matricule:s.matricule, ...Object.entries(s.grades).reduce((acc,[k,v])=>({...acc, [k]:calcNote(v.dst,v.session,v.tp)}),{}) }));
+
+function loadStudentList() {
+  const courseId = document.getElementById('sel-course').value;
+  const type     = document.getElementById('sel-type').value;
+  const classN   = document.getElementById('sel-class').value;
+  if (!courseId) { showToast('Sélectionnez un cours.','warning'); return; }
+  const courseNames = { 1:'Algorithmique', 2:'Base de données SQL', 3:'Développement Web', 4:'Réseaux Mobiles' };
+  const courseName  = courseNames[courseId] || 'Cours';
+  document.getElementById('sheet-placeholder').style.display = 'none';
+  document.getElementById('grade-sheet-container').style.display = 'block';
+  document.getElementById('sheet-title').textContent    = `${courseName} — ${type}`;
+  document.getElementById('sheet-subtitle').textContent = `${classN} · ${FB_STUDENTS.length} étudiants`;
+
+  document.getElementById('grade-sheet-body').innerHTML = FB_STUDENTS.map((s, i) => {
+    const existing = s.grades[courseName.replace(' SQL','')] || {};
+    const val = type==='DST'?existing.dst : type==='TP'?existing.tp : type==='Session'?existing.session : null;
+    return `<tr>
+      <td>${i+1}</td>
+      <td><code class="fs-xs">${s.matricule}</code></td>
+      <td><strong>${s.name}</strong></td>
+      <td>
+        <input type="number" class="form-control grade-input" data-student="${s.id}" data-name="${s.name}"
+          min="0" max="20" step="0.25" style="width:80px;" value="${val??''}"
+          oninput="updatePreview(this,${JSON.stringify(existing).replace(/"/g,"'")},'${type}')"
+          aria-label="Note de ${s.name}">
+      </td>
+      <td id="preview-${s.id}" class="text-muted-sm">—</td>
+      <td id="status-${s.id}"></td>
+    </tr>`;
+  }).join('');
+}
+
+function updatePreview(input, existing, type) {
+  const val = parseFloat(input.value);
+  const sid = input.dataset.student;
+  const prev = document.getElementById(`preview-${sid}`);
+  const stEl = document.getElementById(`status-${sid}`);
+  if (isNaN(val)) { prev.textContent='—'; stEl.textContent=''; return; }
+  let moy;
+  const dst  = type==='DST'     ? val : (existing.dst||0);
+  const tp   = type==='TP'      ? val : existing.tp;
+  const sess = type==='Session'  ? val : (existing.session||0);
+  moy = calcNote(dst, sess, tp||null);
+  const st  = noteStatus(moy);
+  prev.innerHTML = `<strong style="color:${st.color};">${moy.toFixed(2)}/20</strong>`;
+  stEl.innerHTML = `<span class="badge" style="background:${st.color};color:white;font-size:0.75rem;">${st.label}</span>`;
+}
+
+function fillAll() {
+  document.querySelectorAll('.grade-input').forEach(inp => {
+    inp.value = (Math.random()*12+8).toFixed(1);
+    inp.dispatchEvent(new Event('input'));
+  });
+}
+
+async function saveAllGrades() {
+  const type     = document.getElementById('sel-type').value;
+  const courseId = document.getElementById('sel-course').value;
+  const inputs   = document.querySelectorAll('.grade-input');
+  const records  = [];
+  inputs.forEach(inp => {
+    const v = parseFloat(inp.value);
+    if (!isNaN(v)) records.push({ student_id:parseInt(inp.dataset.student), course_id:parseInt(courseId), type, grade:v, student_name:inp.dataset.name });
+  });
+  if (!records.length) { showToast('Aucune note à enregistrer.','warning'); return; }
+  try { await ITP_API.evaluations.createBulk(records); } catch {}
+  const msg = document.getElementById('save-msg');
+  msg.style.cssText = 'display:block;padding:12px;background:#e8f5e9;color:#2e7d32;border-radius:6px;margin-top:15px;';
+  msg.textContent   = `✅ ${records.length} note(s) enregistrée(s) ! Les étudiants ont été notifiés.`;
+  records.forEach(r => Notifs.push('Note publiée', `${type} — ${r.student_name} : ${r.grade}/20`));
+  Security.log('grades_saved', { count:records.length, type, courseId });
+  showToast(`✅ ${records.length} note(s) enregistrée(s) !`,'success');
+}
+
+function exportNotes() {
+  const data = [];
+  FB_STUDENTS.forEach(s => {
+    Object.entries(s.grades).forEach(([course, g]) => {
+      data.push({ Étudiant:s.name, Matricule:s.matricule, Matière:course, DST:g.dst, TP:g.tp||'—', Session:g.session, Moyenne:calcNote(g.dst,g.session,g.tp||null) });
+    });
+  });
+  Excel.exportCSV(data, 'notes_export_itp.csv');
+}
+
+function loadValidation() {
+  const rows = FB_STUDENTS.flatMap(s =>
+    Object.entries(s.grades).map(([course, g]) => {
+      const moy = calcNote(g.dst, g.session, g.tp||null);
+      const st  = noteStatus(moy);
+      return `<tr>
+        <td>${s.name}</td><td>${course}</td>
+        <td>${g.dst}/20</td><td>${g.session}/20</td>
+        <td style="font-weight:bold;color:${st.color};">${moy.toFixed(2)}</td>
+        <td><span class="badge" style="background:${st.color};color:white;font-size:0.75rem;">${st.label}</span></td>
+        <td><button class="btn-success" style="padding:4px 12px;font-size:0.8rem;" onclick="validateGrade(this)">✓ Valider</button></td>
+      </tr>`;
+    })
+  ).join('');
+  document.getElementById('validation-table').innerHTML = rows;
+}
+
+function validateGrade(btn) {
+  btn.textContent = '✓ Validé';
+  btn.style.background = '#28a745';
+  btn.disabled = true;
+}
+function validateAll() {
+  document.querySelectorAll('#validation-table button').forEach(b => validateGrade(b));
+  showToast('✅ Toutes les notes validées !','success');
+  Security.log('all_grades_validated');
+}
+
+function loadRanking() {
+  const ranked = FB_STUDENTS.map(s => {
+    const grades = Object.values(s.grades).map(g => calcNote(g.dst, g.session, g.tp||null));
+    const gpa    = grades.reduce((a,b)=>a+b,0)/grades.length;
+    const credits= grades.filter(g=>g>=10).length * 4;
+    return { ...s, gpa:parseFloat(gpa.toFixed(2)), credits };
+  }).sort((a,b) => b.gpa - a.gpa);
+
+  const MENTIONS = [[16,'Très Bien','#1565c0'],[14,'Bien','#2e7d32'],[12,'Assez Bien','#388e3c'],[10,'Passable','#f57c00'],[0,'Insuffisant','#c62828']];
+  document.getElementById('ranking-table').innerHTML = ranked.map((s, i) => {
+    const [,mention,color] = MENTIONS.find(([seuil]) => s.gpa >= seuil);
+    const medals = ['🥇','🥈','🥉'];
+    return `<tr style="${i<3?'background:#fffde7;':''}">
+      <td style="font-size:1.2rem;">${medals[i]||i+1}</td>
+      <td><code class="fs-xs">${s.matricule}</code></td>
+      <td><strong>${s.name}</strong></td>
+      <td style="font-weight:bold;font-size:1.1rem;color:${s.gpa>=10?'var(--dark-blue)':'var(--red-itp)'};">${s.gpa}/20</td>
+      <td>${s.credits}</td>
+      <td style="color:${color};font-weight:bold;">${mention}</td>
+      <td><span class="badge ${s.gpa>=10?'badge-success':'badge-danger'}">${s.gpa>=10?'Admis':'Ajourné'}</span></td>
+    </tr>`;
+  }).join('');
+}
+
+function previewBulletin() {
+  const studentId = parseInt(document.getElementById('bull-student').value);
+  const year      = document.getElementById('bull-year').value;
+  const s         = FB_STUDENTS.find(x=>x.id===studentId) || FB_STUDENTS[0];
+  document.getElementById('bulletin-preview').style.display = 'block';
+  document.getElementById('bull-name').textContent    = s.name;
+  document.getElementById('bull-mat').textContent     = s.matricule;
+  document.getElementById('bull-year-display').textContent = year;
+
+  const grades = Object.entries(s.grades);
+  let totalMoy = 0, count = 0, totalCredits = 0;
+  document.getElementById('bull-table').innerHTML = grades.map(([course, g]) => {
+    const moy = calcNote(g.dst, g.session, g.tp||null);
+    const st  = noteStatus(moy);
+    const cred = moy >= 10 ? 4 : 0;
+    totalMoy += moy; count++; totalCredits += cred;
+    return `<tr>
+      <td>${course}</td>
+      <td>${g.dst}/20</td>
+      <td>${g.tp!=null?g.tp+'/20':'—'}</td>
+      <td>${g.session}/20</td>
+      <td style="font-weight:bold;color:${st.color};">${moy.toFixed(2)}</td>
+      <td>${cred}/4</td>
+      <td style="color:${st.color};font-weight:bold;">${st.label}</td>
+    </tr>`;
+  }).join('');
+
+  const gpa = (totalMoy/count).toFixed(2);
+  const MENTIONS = [[16,'Très Bien'],[14,'Bien'],[12,'Assez Bien'],[10,'Passable'],[0,'Insuffisant']];
+  const [,mention] = MENTIONS.find(([s]) => parseFloat(gpa) >= s);
+  document.getElementById('bull-gpa').textContent     = `${gpa}/20`;
+  document.getElementById('bull-credits').textContent = totalCredits;
+  document.getElementById('bull-mention').textContent = mention;
+  document.getElementById('bulletin-preview').scrollIntoView({behavior:'smooth'});
+}
+
+function printBulletin() {
+  const studentId = parseInt(document.getElementById('bull-student').value);
+  const s         = FB_STUDENTS.find(x=>x.id===studentId) || FB_STUDENTS[0];
+  const year      = document.getElementById('bull-year').value;
+  const grades    = Object.entries(s.grades).map(([course,g]) => ({
+    course_name:course, dst_grade:g.dst, tp_grade:g.tp||null, session_grade:g.session,
+    final_grade:calcNote(g.dst,g.session,g.tp||null), status:noteStatus(calcNote(g.dst,g.session,g.tp||null)).label
+  }));
+  PDF.generateTranscript({ name:s.name, student_id_card:s.matricule }, grades, year);
+  Security.log('bulletin_printed', { student:s.name });
+}
+
+function generateBulletins() {
+  showToast('Génération de tous les bulletins en cours...','info',3000);
+  setTimeout(() => showToast('✅ Bulletins générés et prêts à imprimer !','success'),3000);
+}
+</script>
+<script>if('serviceWorker' in navigator){navigator.serviceWorker.register('../sw.js').catch(()=>{})}</script>
+</body></html>

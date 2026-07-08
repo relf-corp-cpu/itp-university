@@ -1,0 +1,173 @@
+<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Calendrier Académique — ITP University</title>
+<link rel="stylesheet" href="../assets/css/style.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+<link rel="icon" href="../assets/images/icon-192.png">
+<link rel="manifest" href="../manifest.json"><meta name="theme-color" content="#1D3557"></head><body>
+<a href="#main-content" class="sr-only" style="position:absolute;left:-999px;" onfocus="this.style.left='10px'">Aller au contenu principal</a>
+
+<div id="itp-header"></div>
+<main role="main" id="main-content" style="padding:50px;max-width:1100px;margin:0 auto;">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:40px;flex-wrap:wrap;gap:15px;">
+    <h2 class="m-0">Calendrier Académique 2025–2026</h2>
+    <div class="d-flex gap-10">
+      <button class="btn-outline" onclick="Excel.exportCSV(CALENDAR_DATA,'calendrier_itp.csv')"><i class="fas fa-file-excel"></i> Export</button>
+      <button class="btn-primary" onclick="window.print()"><i class="fas fa-print"></i> Imprimer</button>
+    </div>
+  </div>
+
+  <!-- Légende -->
+  <div style="display:flex;gap:15px;flex-wrap:wrap;margin-bottom:30px;">
+    <span style="display:flex;align-items:center;gap:6px;"><span style="width:14px;height:14px;border-radius:3px;background:#1D3557;"></span> Cours</span>
+    <span style="display:flex;align-items:center;gap:6px;"><span style="width:14px;height:14px;border-radius:3px;background:#e63946;"></span> Examens</span>
+    <span style="display:flex;align-items:center;gap:6px;"><span style="width:14px;height:14px;border-radius:3px;background:#2a9d8f;"></span> Vacances</span>
+    <span style="display:flex;align-items:center;gap:6px;"><span style="width:14px;height:14px;border-radius:3px;background:#e9c46a;"></span> Événements</span>
+    <span style="display:flex;align-items:center;gap:6px;"><span style="width:14px;height:14px;border-radius:3px;background:#6c757d;"></span> Jours fériés</span>
+  </div>
+
+  <!-- Mini calendrier + liste -->
+  <div style="display:grid;grid-template-columns:1fr 320px;gap:30px;">
+    <!-- Grille calendrier -->
+    <div class="card" style="padding:0;overflow:hidden;">
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:15px 20px;background:var(--dark-blue);color:white;">
+        <button onclick="prevMonth()" style="background:none;border:none;color:white;font-size:1.2rem;cursor:pointer;"><i class="fas fa-chevron-left"></i></button>
+        <h3 id="month-label" style="margin:0;color:white;"></h3>
+        <button onclick="nextMonth()" style="background:none;border:none;color:white;font-size:1.2rem;cursor:pointer;"><i class="fas fa-chevron-right"></i></button>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(7,1fr);background:#f8f9fa;">
+        <div style="padding:10px;text-align:center;font-weight:bold;font-size:0.8rem;color:#666;">Lun</div>
+        <div style="padding:10px;text-align:center;font-weight:bold;font-size:0.8rem;color:#666;">Mar</div>
+        <div style="padding:10px;text-align:center;font-weight:bold;font-size:0.8rem;color:#666;">Mer</div>
+        <div style="padding:10px;text-align:center;font-weight:bold;font-size:0.8rem;color:#666;">Jeu</div>
+        <div style="padding:10px;text-align:center;font-weight:bold;font-size:0.8rem;color:#666;">Ven</div>
+        <div style="padding:10px;text-align:center;font-weight:bold;font-size:0.8rem;color:#666;color:#e63946;">Sam</div>
+        <div style="padding:10px;text-align:center;font-weight:bold;font-size:0.8rem;color:#e63946;">Dim</div>
+      </div>
+      <div id="calendar-grid" style="display:grid;grid-template-columns:repeat(7,1fr);"></div>
+    </div>
+
+    <!-- Panneau événements du jour + programme -->
+    <div>
+      <div class="card" class="mb-20">
+        <h4 style="margin:0 0 15px;">Événements sélectionnés</h4>
+        <div id="day-events"><p class="text-muted-sm">Cliquez sur une date pour voir les événements.</p></div>
+      </div>
+      <div class="card">
+        <h4 style="margin:0 0 15px;">Programme de l'année</h4>
+        <div id="year-program" style="font-size:0.85rem;"></div>
+      </div>
+    </div>
+  </div>
+</main>
+<div id="itp-footer"></div>
+<script src="../assets/js/main.js"></script>
+<script src="../assets/js/config.js"></script>
+<script src="../assets/js/api.js"></script>
+<script src="../assets/js/utils.js"></script>
+<script src="../assets/js/tests.js"></script>
+<script src="../assets/js/components.js"></script>
+<script>
+const CALENDAR_DATA = [
+  { date:'2025-10-06', label:'Rentrée académique 2025-2026',  type:'cours',     color:'#1D3557' },
+  { date:'2025-12-22', label:'Début vacances de Noël',        type:'vacances',  color:'#2a9d8f' },
+  { date:'2026-01-05', label:'Reprise des cours',             type:'cours',     color:'#1D3557' },
+  { date:'2026-01-26', label:'Fête de l\'Indépendance Congo', type:'ferie',     color:'#6c757d' },
+  { date:'2026-02-02', label:'Début DST (Session 1)',         type:'examen',    color:'#e63946' },
+  { date:'2026-02-13', label:'Fin des DST',                   type:'examen',    color:'#e63946' },
+  { date:'2026-03-02', label:'Fête Nationale du Congo',       type:'ferie',     color:'#6c757d' },
+  { date:'2026-04-06', label:'Début examens de Session 1',    type:'examen',    color:'#e63946' },
+  { date:'2026-04-24', label:'Fin examens Session 1',         type:'examen',    color:'#e63946' },
+  { date:'2026-04-27', label:'Vacances de Pâques',            type:'vacances',  color:'#2a9d8f' },
+  { date:'2026-05-04', label:'Reprise cours S2',              type:'cours',     color:'#1D3557' },
+  { date:'2026-05-25', label:'Journée de l\'Afrique',         type:'ferie',     color:'#6c757d' },
+  { date:'2026-06-01', label:'Fête du Travail',               type:'ferie',     color:'#6c757d' },
+  { date:'2026-06-25', label:'Hackathon ITP 2026',            type:'evenement', color:'#e9c46a' },
+  { date:'2026-06-29', label:'Début examens de Session 2',    type:'examen',    color:'#e63946' },
+  { date:'2026-07-15', label:'Fin examens — Remise diplômes', type:'evenement', color:'#e9c46a' },
+  { date:'2026-07-31', label:'Délibérations finales',         type:'examen',    color:'#e63946' },
+  { date:'2026-08-10', label:'Début session rattrapage',      type:'examen',    color:'#e63946' },
+  { date:'2026-08-21', label:'Fin session rattrapage',        type:'examen',    color:'#e63946' },
+  { date:'2026-08-15', label:'Fête de l\'Assomption',        type:'ferie',     color:'#6c757d' },
+];
+
+let currentDate = new Date(2026, 5, 1); // Juin 2026
+
+const MONTHS_FR = ['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
+
+function renderCalendar() {
+  const year  = currentDate.getFullYear();
+  const month = currentDate.getMonth();
+  document.getElementById('month-label').textContent = `${MONTHS_FR[month]} ${year}`;
+
+  const firstDay = new Date(year, month, 1);
+  const lastDay  = new Date(year, month + 1, 0);
+  let startDow = firstDay.getDay(); // 0=dim
+  startDow = startDow === 0 ? 6 : startDow - 1; // Ajuster pour Lun=0
+
+  const grid = document.getElementById('calendar-grid');
+  grid.innerHTML = '';
+
+  // Jours vides avant le 1er
+  for (let i = 0; i < startDow; i++) {
+    grid.innerHTML += '<div style="padding:10px;border:1px solid #f0f0f0;min-height:50px;"></div>';
+  }
+
+  for (let d = 1; d <= lastDay.getDate(); d++) {
+    const dateStr = `${year}-${String(month+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const events  = CALENDAR_DATA.filter(e => e.date === dateStr);
+    const isToday = dateStr === new Date().toISOString().split('T')[0];
+    const dow     = new Date(year, month, d).getDay();
+    const isWeekend = dow === 0 || dow === 6;
+
+    const dots = events.map(e => `<div style="width:8px;height:8px;border-radius:50%;background:${e.color};display:inline-block;margin:1px;"></div>`).join('');
+    const bg   = isToday ? '#e3f2fd' : isWeekend ? '#f9f9f9' : 'white';
+
+    grid.innerHTML += `
+      <div onclick="showDayEvents('${dateStr}')"
+        style="padding:8px;border:1px solid #f0f0f0;min-height:50px;cursor:pointer;background:${bg};transition:background 0.15s;"
+        onmouseover="this.style.background='#f0f4ff'" onmouseout="this.style.background='${bg}'">
+        <div style="font-size:0.85rem;font-weight:${isToday?'bold':'normal'};color:${isWeekend?'#e63946':isToday?'var(--dark-blue)':'#333'};">${d}</div>
+        <div style="margin-top:3px;">${dots}</div>
+      </div>`;
+  }
+}
+
+function showDayEvents(dateStr) {
+  const events = CALENDAR_DATA.filter(e => e.date === dateStr);
+  const d = new Date(dateStr);
+  const el = document.getElementById('day-events');
+  if (!events.length) {
+    el.innerHTML = `<p class="text-muted-sm">Aucun événement le ${d.toLocaleDateString('fr-FR')}.</p>`;
+    return;
+  }
+  el.innerHTML = events.map(ev => `
+    <div style="padding:8px 12px;border-left:4px solid ${ev.color};background:#f8f9fa;border-radius:0 5px 5px 0;margin-bottom:8px;">
+      <p style="margin:0;font-size:0.85rem;font-weight:bold;">${ev.label}</p>
+      <p style="margin:2px 0 0;font-size:0.75rem;color:#888;">${d.toLocaleDateString('fr-FR','fr')}</p>
+    </div>`).join('');
+}
+
+function renderYearProgram() {
+  const types = { cours:'#1D3557', examen:'#e63946', vacances:'#2a9d8f', evenement:'#e9c46a', ferie:'#6c757d' };
+  const labels = { cours:'Cours', examen:'Examen', vacances:'Vacances', evenement:'Événement', ferie:'Férié' };
+  const sorted = [...CALENDAR_DATA].sort((a,b) => a.date.localeCompare(b.date));
+  document.getElementById('year-program').innerHTML = sorted.map(e => {
+    const d = new Date(e.date);
+    return `<div style="display:flex;gap:8px;align-items:flex-start;padding:6px 0;border-bottom:1px solid #f0f0f0;">
+      <div style="width:8px;height:8px;border-radius:50%;background:${types[e.type]||'#999'};flex-shrink:0;margin-top:5px;"></div>
+      <div>
+        <div style="font-size:0.82rem;font-weight:bold;">${d.toLocaleDateString('fr-FR',{day:'2-digit',month:'short'})}</div>
+        <div style="font-size:0.78rem;color:#555;">${e.label}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function prevMonth() { currentDate.setMonth(currentDate.getMonth() - 1); renderCalendar(); }
+function nextMonth() { currentDate.setMonth(currentDate.getMonth() + 1); renderCalendar(); }
+
+renderCalendar();
+renderYearProgram();
+</script>
+<script>if('serviceWorker' in navigator){navigator.serviceWorker.register('../sw.js').catch(()=>{})}</script>
+</body></html>

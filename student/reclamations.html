@@ -1,0 +1,204 @@
+<!DOCTYPE html><html lang="fr"><head>
+  <link rel="manifest" href="../manifest.json">
+  <meta name="theme-color" content="#1D3557"><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Réclamations — ITP University</title>
+<link rel="stylesheet" href="../assets/css/style.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+<link rel="icon" href="../assets/images/icon-192.png"></head><body>
+<a href="#main-content" class="sr-only" style="position:absolute;left:-999px;" onfocus="this.style.left='10px'">Aller au contenu principal</a>
+
+<div class="dashboard-layout">
+<aside role="complementary" aria-label="Menu de navigation" style="width:250px;background-color:var(--dark-blue);color:white;padding:20px;min-height:100vh;flex-shrink:0;">
+  <h3 style="color:white;border-bottom:1px solid rgba(255,255,255,0.1);padding-bottom:10px;">Espace Étudiant</h3>
+  <nav role="navigation" aria-label="Navigation principale" style="display:flex;flex-direction:column;gap:10px;margin-top:20px;">
+    <a href="index.html"           class="nav-link"><i class="fas fa-home"></i> Tableau de bord</a>
+    <a href="notes.html"           class="nav-link"><i class="fas fa-graduation-cap"></i> Mes Notes</a>
+    <a href="emploi_du_temps.html" class="nav-link"><i class="fas fa-calendar-alt"></i> Emploi du temps</a>
+    <a href="paiements.html"       class="nav-link"><i class="fas fa-wallet"></i> Paiements</a>
+    <a href="documents.html"       class="nav-link"><i class="fas fa-file-alt"></i> Mes Documents</a>
+    <a href="carte_numerique.html" class="nav-link"><i class="fas fa-id-card"></i> Carte Numérique</a>
+    <a href="reclamations.html"    class="nav-link"><i class="fas fa-exclamation-circle"></i> Réclamations</a>
+    <a href="profil.html"          class="nav-link"><i class="fas fa-user"></i> Mon Profil</a>
+    <a href="#" onclick="if(confirm('Se déconnecter ?')){localStorage.clear();window.location='../auth/login.html';}" class="nav-link"><i class="fas fa-sign-out-alt"></i> Déconnexion</a>
+  </nav>
+</aside>
+<main role="main" id="main-content" style="flex:1;padding:40px;background:#f8f9fa;">
+  <h2>Réclamations &amp; Notifications</h2>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:30px;margin-top:30px;">
+
+    <!-- Formulaire réclamation -->
+    <div class="card">
+      <h3>Nouvelle Réclamation</h3>
+      <form id="complaint-form" aria-label="Formulaire de réclamation" class="mt-20" onsubmit="submitComplaint(event)">
+        <div class="mb-15">
+          <label class="form-label">Type</label>
+          <select id="complaint-type" style="width:100%;padding:10px;border:1px solid var(--light-grey);border-radius:4px;">
+            <option>Erreur de note</option>
+            <option>Problème de paiement</option>
+            <option>Absence injustifiée</option>
+            <option>Problème de carte étudiante</option>
+            <option>Autre</option>
+          </select>
+        </div>
+        <div class="mb-15">
+          <label class="form-label">Description</label>
+          <textarea id="complaint-desc" required aria-required="true" style="width:100%;padding:10px;border:1px solid var(--light-grey);border-radius:4px;height:100px;box-sizing:border-box;resize:vertical;" placeholder="Décrivez votre problème en détail..."></textarea>
+        </div>
+        <div id="complaint-msg" style="display:none;margin-bottom:10px;padding:10px;border-radius:4px;"></div>
+        <button type="submit" aria-live="polite" id="complaint-btn" class="btn-primary" class="w-full">
+          <span id="c-text">Soumettre</span>
+          <span id="c-loader" class="d-none"><i class="fas fa-spinner fa-spin"></i></span>
+        </button>
+      </form>
+
+      <!-- Mes réclamations -->
+      <div class="mt-30">
+        <h4>Mes réclamations</h4>
+        <div id="my-complaints" style="margin-top:10px;">
+          <p class="text-muted-sm">Chargement...</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Notifications -->
+    <div class="card">
+      <h3>Notifications Récentes</h3>
+      <div id="notif-list" class="mt-15">
+        <p class="text-muted-sm">Chargement...</p>
+      </div>
+      <button id="mark-all-btn" class="btn-outline" style="width:100%;margin-top:15px;" onclick="markAllRead()">
+        Tout marquer comme lu
+      </button>
+    </div>
+  </div>
+</main>
+</div>
+<script src="../assets/js/auth-guard.js" data-role="student"></script>
+<script src="../assets/js/main.js"></script>
+<script src="../assets/js/config.js"></script>
+<script src="../assets/js/api.js"></script>
+<script src="../assets/js/utils.js"></script>
+<script src="../assets/js/tests.js"></script>
+<script src="../assets/js/components.js"></script>
+<script>
+const FALLBACK_NOTIFS = [
+  { id:1, message:'Rappel de paiement : régularisez votre 2ème tranche avant le 30 juin.', is_read:false, created_at:'2026-06-20' },
+  { id:2, message:'La note de "Base de données" est disponible.', is_read:true, created_at:'2026-06-18' },
+];
+const FALLBACK_COMPLAINTS = [
+  { id:1, subject:'Erreur de note', description:'Note de Réseaux incorrecte.', status:'open', created_at:'2026-06-15' },
+];
+
+async function loadNotifications() {
+  const user = ITP_API.auth.currentUser();
+  try {
+    const notifs = await ITP_API.notifications.getForUser(user?.id || 1);
+    renderNotifs(notifs);
+  } catch {
+    renderNotifs(FALLBACK_NOTIFS);
+  }
+}
+
+function renderNotifs(notifs) {
+  const colors = { false:'#fff9c4', true:'white' };
+  const html = notifs.map(n => `
+    <div style="padding:12px;border-bottom:1px solid #eee;background:${colors[n.is_read]};cursor:pointer;"
+         onclick="markRead(${n.id}, this)">
+      <p style="margin:0;font-size:0.9rem;">${n.message}</p>
+      <p style="margin:4px 0 0;font-size:0.75rem;color:#999;">${n.created_at ? new Date(n.created_at).toLocaleDateString('fr-FR') : ''} ${n.is_read ? '' : '<strong style=color:var(--red-itp);>NOUVEAU</strong>'}</p>
+    </div>`).join('') || '<p style="color:#999;text-align:center;padding:20px;">Aucune notification</p>';
+  document.getElementById('notif-list').innerHTML = html;
+}
+
+async function markRead(id, el) {
+  el.style.background = 'white';
+  try { await ITP_API.notifications.markRead(id); } catch {}
+}
+async function markAllRead() {
+  document.querySelectorAll('#notif-list div').forEach(el => el.style.background = 'white');
+}
+
+async function loadComplaints() {
+  const user = ITP_API.auth.currentUser();
+  try {
+    const all = await ITP_API.complaints.getAll();
+    const mine = all.filter(c => c.student_id === (user?.student_id || 1));
+    renderComplaints(mine);
+  } catch {
+    renderComplaints(FALLBACK_COMPLAINTS);
+  }
+}
+
+function renderComplaints(list) {
+  const colors = { open:'orange', resolved:'green', closed:'grey' };
+  const labels = { open:'En cours', resolved:'Résolu', closed:'Fermé' };
+  const html = list.map(c => `
+    <div style="padding:10px;border:1px solid #eee;border-radius:5px;margin-bottom:8px;">
+      <div style="display:flex;justify-content:space-between;">
+        <strong style="font-size:0.9rem;">${c.subject}</strong>
+        <span style="color:${colors[c.status]||'grey'};font-size:0.8rem;font-weight:bold;">${labels[c.status]||c.status}</span>
+      </div>
+      <p style="margin:4px 0 0;font-size:0.8rem;color:#666;">${c.description}</p>
+    </div>`).join('') || '<p class="text-muted-sm">Aucune réclamation</p>';
+  document.getElementById('my-complaints').innerHTML = html;
+}
+
+async function submitComplaint(e) {
+  e.preventDefault();
+  const user    = ITP_API.auth.currentUser();
+  const subject = document.getElementById('complaint-type').value;
+  const desc    = document.getElementById('complaint-desc').value.trim();
+  const msgEl   = document.getElementById('complaint-msg');
+  document.getElementById('c-text').style.display   = 'none';
+  document.getElementById('c-loader').style.display = 'inline';
+
+  try {
+    await ITP_API.complaints.create({
+      student_id: user?.student_id || 1,
+      subject, description: desc, status:'open'
+    });
+    showMsg(msgEl, '✅ Réclamation soumise au secrétariat.', '#e8f5e9', '#2e7d32');
+    FALLBACK_COMPLAINTS.unshift({ id: Date.now(), subject, description: desc, status:'open', created_at: new Date().toISOString() });
+    renderComplaints(FALLBACK_COMPLAINTS);
+    e.target.reset();
+  } catch {
+    showMsg(msgEl, '✅ Réclamation enregistrée (mode démo).', '#e8f5e9', '#2e7d32');
+    FALLBACK_COMPLAINTS.unshift({ id: Date.now(), subject, description: desc, status:'open', created_at: new Date().toISOString() });
+    renderComplaints(FALLBACK_COMPLAINTS);
+    e.target.reset();
+  } finally {
+    document.getElementById('c-text').style.display   = 'inline';
+    document.getElementById('c-loader').style.display = 'none';
+  }
+}
+
+function showMsg(el, text, bg, color) {
+  el.style.display = 'block';
+  el.style.background = bg;
+  el.style.color = color;
+  el.textContent = text;
+  setTimeout(() => el.style.display = 'none', 4000);
+}
+
+loadNotifications();
+loadComplaints();
+</script>
+
+<script>
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('../sw.js').catch(() => {});
+}
+</script>
+
+<!-- PWA Banner -->
+<div id="pwa-banner">
+  <div class="d-flex align-center gap-12">
+    <img src="../assets/images/icon-192.png" style="width:36px;height:36px;border-radius:8px;">
+    <div><strong>ITP University</strong><br><small>Installer l'application sur votre appareil</small></div>
+  </div>
+  <div class="d-flex gap-10">
+    <button onclick="installPWA()" style="background:white;color:var(--dark-blue);border:none;padding:8px 16px;border-radius:5px;cursor:pointer;font-weight:bold;">Installer</button>
+    <button onclick="dismissPWA()" style="background:none;border:none;color:rgba(255,255,255,0.7);cursor:pointer;font-size:1.2rem;">&#x2715;</button>
+  </div>
+</div>
+</body></html>

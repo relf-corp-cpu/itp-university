@@ -1,0 +1,87 @@
+<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Gestion des Événements — ITP University</title>
+<link rel="stylesheet" href="../assets/css/style.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+<link rel="manifest" href="../manifest.json"></head><body>
+<a href="#main-content" class="sr-only">Aller au contenu principal</a>
+<div class="dashboard-layout">
+<aside class="sidebar" role="complementary" aria-label="Menu secrétariat">
+  <h3>Secrétariat</h3>
+  <nav role="navigation" style="display:flex;flex-direction:column;gap:10px;margin-top:20px;">
+    <a href="index.html"        class="nav-link"><i class="fas fa-user-plus"></i> Inscriptions</a>
+    <a href="attestations.html" class="nav-link"><i class="fas fa-file-alt"></i> Attestations</a>
+    <a href="reclamations.html" class="nav-link"><i class="fas fa-exclamation-circle"></i> Réclamations</a>
+    <a href="paiements.html"    class="nav-link"><i class="fas fa-wallet"></i> Paiements</a>
+    <a href="etudiants.html"    class="nav-link"><i class="fas fa-users"></i> Étudiants</a>
+    <a href="evenements.html"   class="nav-link"><i class="fas fa-calendar-alt"></i> Événements</a>
+    <a href="#" onclick="if(confirm('Se déconnecter ?')){localStorage.clear();window.location='../auth/login.html';}" class="nav-link"><i class="fas fa-sign-out-alt"></i> Déconnexion</a>
+  </nav>
+</aside>
+<main class="dashboard-main" id="main-content" role="main">
+
+  <div class="page-header">
+    <div><h2 class="page-title">Gestion des Événements</h2><p class="text-muted-sm m-0">Calendrier académique et activités</p></div>
+    <div class="d-flex gap-10">
+      <a href="../pages/evenements.html" class="btn-outline"><i class="fas fa-eye"></i> Vue publique</a>
+      <button class="btn-primary" onclick="openNewEvent()"><i class="fas fa-plus"></i> Nouvel événement</button>
+    </div>
+  </div>
+  <div id="events-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:20px;"></div>
+  <script>
+  const TYPE_C={academic:"#1D3557",cultural:"#9c27b0",sports:"#28a745",ceremony:"#e9c46a",other:"#666"};
+  const FB_EVT=[
+    {id:1,title:"Examens Session 2",date:"2026-06-29",end:"2026-07-15",type:"academic",location:"Tous les campus",public:true},
+    {id:2,title:"Hackathon ITP 2026",date:"2026-07-25",end:"2026-07-26",type:"cultural",location:"Campus Brazzaville",public:true},
+    {id:3,title:"Remise des diplômes",date:"2026-08-15",end:"2026-08-15",type:"ceremony",location:"Amphi A",public:true},
+    {id:4,title:"Réunion pédagogique",date:"2026-07-10",end:"2026-07-10",type:"academic",location:"Salle des profs",public:false},
+  ];
+  let events = [...FB_EVT];
+  function renderEvents(list) {
+    document.getElementById("events-grid").innerHTML = list.map(e => `<div class="card" style="border-top:4px solid ${TYPE_C[e.type]||'#666'};">
+      <div class="d-flex justify-between align-center mb-10">
+        <span class="badge" style="background:${TYPE_C[e.type]};color:white;font-size:0.75rem;">${e.type}</span>
+        <span class="text-muted-sm">${e.public?"🌐 Public":"🔒 Interne"}</span>
+      </div>
+      <h4 class="mb-8">${Security.sanitize(e.title)}</h4>
+      <p class="text-muted-sm mb-5"><i class="fas fa-calendar"></i> ${new Date(e.date).toLocaleDateString("fr-FR")}${e.end!==e.date?" → "+new Date(e.end).toLocaleDateString("fr-FR"):""}</p>
+      <p class="text-muted-sm mb-15"><i class="fas fa-map-marker-alt"></i> ${e.location}</p>
+      <div class="d-flex gap-8">
+        <button class="btn-outline" style="flex:1;font-size:0.82rem;" onclick="editEvent(${e.id})"><i class="fas fa-edit"></i> Modifier</button>
+        <button class="btn-danger"  style="padding:7px 12px;font-size:0.82rem;" onclick="deleteEvent(${e.id})"><i class="fas fa-trash"></i></button>
+      </div>
+    </div>`).join("");
+  }
+  function openNewEvent() {
+    Modal.show("Nouvel événement",
+      `<div class="form-group"><label class="form-label">Titre</label><input id="ev-t" class="form-control" required></div>
+       <div class="form-grid-2">
+         <div class="form-group"><label class="form-label">Date début</label><input type="date" id="ev-d" class="form-control"></div>
+         <div class="form-group"><label class="form-label">Date fin</label><input type="date" id="ev-e" class="form-control"></div>
+         <div class="form-group"><label class="form-label">Type</label><select id="ev-tp" class="form-control"><option value="academic">Académique</option><option value="cultural">Culturel</option><option value="ceremony">Cérémonie</option><option value="sports">Sports</option></select></div>
+         <div class="form-group"><label class="form-label">Lieu</label><input id="ev-l" class="form-control" placeholder="Ex: Amphi A"></div>
+       </div>
+       <label style="display:flex;align-items:center;gap:10px;cursor:pointer;"><input type="checkbox" id="ev-pub" checked> Visible sur le site public</label>`,
+      [{label:"Créer",cls:"btn-primary",fn:"saveEvent()"},{label:"Annuler",cls:"btn-outline",fn:"Modal.close()"}]
+    );
+  }
+  function saveEvent() {
+    const t=document.getElementById("ev-t")?.value?.trim();
+    if(!t){showToast("Titre obligatoire.","warning");return;}
+    events.unshift({id:Date.now(),title:t,date:document.getElementById("ev-d")?.value||new Date().toISOString().split("T")[0],end:document.getElementById("ev-e")?.value||new Date().toISOString().split("T")[0],type:document.getElementById("ev-tp")?.value,location:document.getElementById("ev-l")?.value||"À définir",public:document.getElementById("ev-pub")?.checked});
+    renderEvents(events);Modal.close();showToast("✅ Événement créé !","success");Security.log("event_created",{title:t});
+  }
+  function editEvent(id){showToast("Édition — bientôt disponible.","info");}
+  function deleteEvent(id){if(!confirm("Supprimer cet événement ?"))return;events=events.filter(e=>e.id!==id);renderEvents(events);showToast("Événement supprimé.","success");}
+  renderEvents(events);
+  </script>
+</main>
+</div>
+<script src="../assets/js/main.js"></script>
+<script src="../assets/js/config.js"></script>
+<script src="../assets/js/api.js"></script>
+<script src="../assets/js/utils.js"></script>
+<script src="../assets/js/auth-guard.js" data-role="secretary,admin"></script>
+<script src="../assets/js/tests.js"></script>
+<script src="../assets/js/components.js"></script>
+<script>if('serviceWorker' in navigator){navigator.serviceWorker.register('../sw.js').catch(()=>{})}</script>
+</body></html>

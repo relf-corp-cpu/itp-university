@@ -1,0 +1,381 @@
+<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Structure Académique — ITP University</title>
+<link rel="stylesheet" href="../assets/css/style.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+<link rel="icon" href="../assets/images/icon-192.png">
+<link rel="manifest" href="../manifest.json"></head><body>
+<a href="#main-content" class="sr-only">Aller au contenu principal</a>
+<div class="dashboard-layout">
+<aside class="sidebar" role="complementary" aria-label="Menu administrateur">
+  <h3>Administration</h3>
+      <nav role="navigation" aria-label="Navigation principale" style="display:flex;flex-direction:column;gap:10px;margin-top:20px;">
+    <a href="index.html"        class="nav-link"><i class="fas fa-chart-line"></i> Tableau de bord</a>
+    <a href="analytics.html"    class="nav-link"><i class="fas fa-chart-bar"></i> Analytique</a>
+    <a href="utilisateurs.html" class="nav-link"><i class="fas fa-users"></i> Utilisateurs</a>
+    <a href="academic.html"     class="nav-link"><i class="fas fa-graduation-cap"></i> Structure Académique</a>
+    <a href="logs.html"         class="nav-link"><i class="fas fa-history"></i> Journal</a>
+    <a href="parametres.html"   class="nav-link"><i class="fas fa-cog"></i> Paramètres</a>
+    <a href="permissions.html"  class="nav-link"><i class="fas fa-shield-alt"></i> Permissions</a>
+    <a href="sauvegardes.html"  class="nav-link"><i class="fas fa-database"></i> Sauvegardes</a>
+    <a href="#" onclick="if(confirm('Se déconnecter ?')){localStorage.clear();window.location='../auth/login.html';}" class="nav-link"><i class="fas fa-sign-out-alt"></i> Déconnexion</a>
+  </nav>
+</aside>
+<main class="dashboard-main" id="main-content" role="main">
+  <div class="page-header">
+    <h2 class="page-title">Structure Académique</h2>
+    <button class="btn-primary" onclick="refreshAll()"><i class="fas fa-sync"></i> Actualiser</button>
+  </div>
+
+  <div id="tabs-academic">
+    <div class="tabs">
+      <button class="tab active" data-tab="tab-semesters">Semestres</button>
+      <button class="tab" data-tab="tab-ue">Unités d'Ens. (UE)</button>
+      <button class="tab" data-tab="tab-courses">Matières</button>
+      <button class="tab" data-tab="tab-rooms">Salles</button>
+      <button class="tab" data-tab="tab-professors">Enseignants</button>
+    </div>
+
+    <!-- Semestres -->
+    <div class="tab-panel active" id="tab-semesters">
+      <div class="card">
+        <div class="d-flex justify-between align-center mb-20">
+          <h3 class="m-0">Gestion des Semestres</h3>
+          <button class="btn-primary" onclick="addSemester()"><i class="fas fa-plus"></i> Nouveau semestre</button>
+        </div>
+        <div class="table-wrapper">
+          <table class="data-table" role="table">
+            <thead><tr><th>Nom</th><th>Filière</th><th>Numéro</th><th>Année</th><th>UE</th><th>Actions</th></tr></thead>
+            <tbody id="semesters-table">
+              <tr><td colspan="6" class="text-center text-muted-sm" style="padding:20px;">Chargement...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- UE -->
+    <div class="tab-panel" id="tab-ue">
+      <div class="card">
+        <div class="d-flex justify-between align-center mb-20">
+          <h3 class="m-0">Unités d'Enseignement (Système LMD)</h3>
+          <button class="btn-primary" onclick="addUE()"><i class="fas fa-plus"></i> Nouvelle UE</button>
+        </div>
+        <div class="table-wrapper">
+          <table class="data-table" role="table">
+            <thead><tr><th>Code</th><th>Nom</th><th>Semestre</th><th>Crédits ECTS</th><th>Coefficient</th><th>Actions</th></tr></thead>
+            <tbody id="ues-table"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Matières -->
+    <div class="tab-panel" id="tab-courses">
+      <div class="card">
+        <div class="d-flex justify-between align-center mb-20">
+          <h3 class="m-0">Gestion des Matières</h3>
+          <button class="btn-primary" onclick="addCourse()"><i class="fas fa-plus"></i> Nouvelle matière</button>
+        </div>
+        <div class="table-wrapper">
+          <table class="data-table" role="table">
+            <thead><tr><th>Code</th><th>Nom</th><th>UE</th><th>Professeur</th><th>Crédits</th><th>Coeff.</th><th>H.CM</th><th>H.TD</th><th>H.TP</th><th>Actions</th></tr></thead>
+            <tbody id="courses-table"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Salles -->
+    <div class="tab-panel" id="tab-rooms">
+      <div class="card">
+        <div class="d-flex justify-between align-center mb-20">
+          <h3 class="m-0">Gestion des Salles</h3>
+          <button class="btn-primary" onclick="addRoom()"><i class="fas fa-plus"></i> Nouvelle salle</button>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:15px;" id="rooms-grid">
+        </div>
+      </div>
+    </div>
+
+    <!-- Enseignants -->
+    <div class="tab-panel" id="tab-professors">
+      <div class="card">
+        <div class="d-flex justify-between align-center mb-20">
+          <h3 class="m-0">Gestion des Enseignants</h3>
+          <button class="btn-primary" onclick="addProfessor()"><i class="fas fa-plus"></i> Nouvel enseignant</button>
+        </div>
+        <div class="table-wrapper">
+          <table class="data-table" role="table">
+            <thead><tr><th>Nom</th><th>Département</th><th>Spécialité</th><th>Grade</th><th>Cours attribués</th><th>Actions</th></tr></thead>
+            <tbody id="professors-table"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</main>
+</div>
+
+<script src="../assets/js/main.js"></script>
+<script src="../assets/js/config.js"></script>
+<script src="../assets/js/api.js"></script>
+<script src="../assets/js/utils.js"></script>
+<script src="../assets/js/auth-guard.js" data-role="admin,direction"></script>
+<script src="../assets/js/tests.js"></script>
+<script src="../assets/js/components.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', () => { initTabs('tabs-academic'); loadAll(); });
+
+const FB_SEMESTERS = [
+  { id:1, name:'Semestre 1', program:'Génie Logiciel', number:1, academic_year:'2025-2026', ue_count:3 },
+  { id:2, name:'Semestre 2', program:'Génie Logiciel', number:2, academic_year:'2025-2026', ue_count:3 },
+  { id:3, name:'Semestre 1', program:'Réseaux & Télécoms', number:1, academic_year:'2025-2026', ue_count:2 },
+];
+const FB_UES = [
+  { id:1, code:'UE-IF', name:'Informatique Fondamentale', semester:'S1', credits:6, coefficient:1.5 },
+  { id:2, code:'UE-MA', name:'Mathématiques Appliquées',  semester:'S1', credits:4, coefficient:1.0 },
+  { id:3, code:'UE-DW', name:'Développement Web',         semester:'S2', credits:4, coefficient:1.0 },
+];
+const FB_COURSES = [
+  { id:1, code:'ALG', name:'Algorithmique',    ue:'UE-IF', professor:'Prof. Moukoko', credits:4, coefficient:1.5, hours_cm:30, hours_td:15, hours_tp:0 },
+  { id:2, code:'BDD', name:'Base de données',  ue:'UE-IF', professor:'Prof. Moukoko', credits:4, coefficient:1.0, hours_cm:20, hours_td:20, hours_tp:10 },
+  { id:3, code:'DW',  name:'Développement Web',ue:'UE-DW', professor:'Prof. Martin',  credits:4, coefficient:1.0, hours_cm:20, hours_td:10, hours_tp:20 },
+  { id:4, code:'MATH',name:'Mathématiques',    ue:'UE-MA', professor:'Prof. Moukoko', credits:4, coefficient:1.0, hours_cm:30, hours_td:20, hours_tp:0 },
+  { id:5, code:'RM',  name:'Réseaux Mobiles',  ue:'UE-RF', professor:'Prof. Martin',  credits:4, coefficient:1.0, hours_cm:25, hours_td:15, hours_tp:0 },
+];
+const FB_ROOMS = [
+  { id:1, name:'Salle 101',    campus:'Brazzaville', capacity:40,  type:'classroom',    available:true },
+  { id:2, name:'Salle 204',    campus:'Brazzaville', capacity:60,  type:'classroom',    available:true },
+  { id:3, name:'Amphi A',      campus:'Brazzaville', capacity:150, type:'amphitheater', available:true },
+  { id:4, name:'Salle Machine',campus:'Brazzaville', capacity:20,  type:'lab',          available:false },
+  { id:5, name:'Salle B1',     campus:'Pointe-Noire',capacity:30,  type:'classroom',    available:true },
+];
+const FB_PROFESSORS = [
+  { id:1, name:'Prof. Michel Moukoko', department:'Développement Web',  speciality:'Laravel, PHP',  grade:'Maître de Conférences', courses:3 },
+  { id:2, name:'Prof. Martin IBARA',   department:'Réseaux & Systèmes', speciality:'Cisco, Linux',  grade:'Assistant',             courses:2 },
+];
+
+function loadAll() {
+  renderSemesters(FB_SEMESTERS);
+  renderUEs(FB_UES);
+  renderCourses(FB_COURSES);
+  renderRooms(FB_ROOMS);
+  renderProfessors(FB_PROFESSORS);
+}
+
+function renderSemesters(list) {
+  document.getElementById('semesters-table').innerHTML = list.map(s => `
+    <tr>
+      <td><strong>${s.name}</strong></td>
+      <td>${s.program}</td>
+      <td>S${s.number}</td>
+      <td><span class="badge badge-info">${s.academic_year}</span></td>
+      <td>${s.ue_count} UE</td>
+      <td><button class="btn-outline" style="padding:4px 10px;font-size:0.8rem;" onclick="editSemester(${s.id})"><i class="fas fa-edit"></i></button></td>
+    </tr>`).join('');
+}
+
+function renderUEs(list) {
+  document.getElementById('ues-table').innerHTML = list.map(u => `
+    <tr>
+      <td><code>${u.code}</code></td>
+      <td><strong>${u.name}</strong></td>
+      <td>${u.semester}</td>
+      <td><span class="badge badge-success">${u.credits} ECTS</span></td>
+      <td>${u.coefficient}</td>
+      <td>
+        <div class="d-flex gap-5">
+          <button class="btn-outline" style="padding:4px 10px;font-size:0.8rem;" onclick="editUE(${u.id})"><i class="fas fa-edit"></i></button>
+          <button class="btn-danger"  style="padding:4px 10px;font-size:0.8rem;" onclick="deleteItem('UE',${u.id})"><i class="fas fa-trash"></i></button>
+        </div>
+      </td>
+    </tr>`).join('');
+}
+
+function renderCourses(list) {
+  document.getElementById('courses-table').innerHTML = list.map(c => `
+    <tr>
+      <td><code>${c.code}</code></td>
+      <td><strong>${c.name}</strong></td>
+      <td class="text-muted-sm">${c.ue}</td>
+      <td class="text-muted-sm">${c.professor}</td>
+      <td>${c.credits}</td>
+      <td>${c.coefficient}</td>
+      <td>${c.hours_cm}h</td>
+      <td>${c.hours_td}h</td>
+      <td>${c.hours_tp}h</td>
+      <td>
+        <div class="d-flex gap-5">
+          <button class="btn-outline" style="padding:4px 10px;font-size:0.8rem;" onclick="editCourse(${c.id})"><i class="fas fa-edit"></i></button>
+          <button class="btn-danger"  style="padding:4px 10px;font-size:0.8rem;" onclick="deleteItem('Matière',${c.id})"><i class="fas fa-trash"></i></button>
+        </div>
+      </td>
+    </tr>`).join('');
+}
+
+const ROOM_TYPES = { classroom:'🏫 Salle', lab:'🖥️ Lab', amphitheater:'🎓 Amphi', office:'🏢 Bureau' };
+function renderRooms(list) {
+  document.getElementById('rooms-grid').innerHTML = list.map(r => `
+    <div class="card" style="border-top:4px solid ${r.available?'#28a745':'var(--red-itp)'};">
+      <h4 class="m-0 mb-5">${r.name}</h4>
+      <p class="text-muted-sm mb-5">${ROOM_TYPES[r.type]||r.type}</p>
+      <p class="text-muted-sm mb-5"><i class="fas fa-users"></i> ${r.capacity} places</p>
+      <p class="text-muted-sm mb-10"><i class="fas fa-map-marker-alt"></i> ${r.campus}</p>
+      <span class="badge ${r.available?'badge-success':'badge-danger'}">${r.available?'Disponible':'Occupée'}</span>
+      <button class="btn-outline" style="width:100%;margin-top:10px;font-size:0.82rem;" onclick="editRoom(${r.id})"><i class="fas fa-edit"></i> Modifier</button>
+    </div>`).join('');
+}
+
+function renderProfessors(list) {
+  document.getElementById('professors-table').innerHTML = list.map(p => `
+    <tr>
+      <td><strong>${p.name}</strong></td>
+      <td>${p.department}</td>
+      <td class="text-muted-sm">${p.speciality}</td>
+      <td><span class="badge badge-info">${p.grade}</span></td>
+      <td>${p.courses} cours</td>
+      <td>
+        <div class="d-flex gap-5">
+          <button class="btn-outline" style="padding:4px 10px;font-size:0.8rem;" onclick="editProfessor(${p.id})"><i class="fas fa-edit"></i></button>
+          <button class="btn-primary" style="padding:4px 10px;font-size:0.8rem;" onclick="assignCourses(${p.id})"><i class="fas fa-book"></i> Attribuer</button>
+        </div>
+      </td>
+    </tr>`).join('');
+}
+
+function addSemester() {
+  Modal.show('Nouveau Semestre',
+    `<div class="form-grid-2">
+      <div class="form-group"><label class="form-label">Nom</label><input id="s-name" class="form-control" placeholder="Semestre 1"></div>
+      <div class="form-group"><label class="form-label">Numéro</label><input type="number" id="s-num" class="form-control" min="1" max="6" value="1"></div>
+      <div class="form-group"><label class="form-label">Filière</label>
+        <select id="s-prog" class="form-control"><option>Génie Logiciel</option><option>Réseaux & Télécoms</option><option>Cybersécurité</option></select></div>
+      <div class="form-group"><label class="form-label">Année académique</label><input id="s-year" class="form-control" value="2025-2026"></div>
+    </div>`,
+    [{ label:'Créer', cls:'btn-primary', fn:'saveSemester()' }, { label:'Annuler', cls:'btn-outline', fn:'Modal.close()' }]
+  );
+}
+function saveSemester() {
+  const name = document.getElementById('s-name')?.value?.trim();
+  if (!name) { showToast('Nom obligatoire.','warning'); return; }
+  FB_SEMESTERS.unshift({ id:Date.now(), name, program:document.getElementById('s-prog')?.value, number:parseInt(document.getElementById('s-num')?.value||1), academic_year:document.getElementById('s-year')?.value, ue_count:0 });
+  renderSemesters(FB_SEMESTERS); Modal.close();
+  showToast('✅ Semestre créé !','success');
+  Security.log('semester_created', { name });
+}
+
+function addUE() {
+  Modal.show('Nouvelle UE',
+    `<div class="form-grid-2">
+      <div class="form-group"><label class="form-label">Code</label><input id="ue-code" class="form-control" placeholder="UE-XX"></div>
+      <div class="form-group"><label class="form-label">Nom</label><input id="ue-name" class="form-control" placeholder="Nom de l'UE"></div>
+      <div class="form-group"><label class="form-label">Crédits ECTS</label><input type="number" id="ue-credits" class="form-control" value="4" min="1" max="30"></div>
+      <div class="form-group"><label class="form-label">Coefficient</label><input type="number" id="ue-coef" class="form-control" value="1.0" min="0.5" max="5" step="0.5"></div>
+    </div>`,
+    [{ label:'Créer', cls:'btn-primary', fn:'saveUE()' }, { label:'Annuler', cls:'btn-outline', fn:'Modal.close()' }]
+  );
+}
+function saveUE() {
+  const name = document.getElementById('ue-name')?.value?.trim();
+  if (!name) { showToast('Nom obligatoire.','warning'); return; }
+  FB_UES.push({ id:Date.now(), code:document.getElementById('ue-code')?.value, name, semester:'S1', credits:parseInt(document.getElementById('ue-credits')?.value||4), coefficient:parseFloat(document.getElementById('ue-coef')?.value||1) });
+  renderUEs(FB_UES); Modal.close();
+  showToast('✅ UE créée !','success');
+}
+
+function addCourse() {
+  Modal.show('Nouvelle Matière',
+    `<div class="form-grid-2">
+      <div class="form-group"><label class="form-label">Code</label><input id="c-code" class="form-control" placeholder="ALG"></div>
+      <div class="form-group"><label class="form-label">Nom</label><input id="c-name" class="form-control" required></div>
+      <div class="form-group"><label class="form-label">Crédits</label><input type="number" id="c-cred" class="form-control" value="4" min="1"></div>
+      <div class="form-group"><label class="form-label">Coefficient</label><input type="number" id="c-coef" class="form-control" value="1.0" step="0.5"></div>
+      <div class="form-group"><label class="form-label">H. Cours Magistraux</label><input type="number" id="c-cm" class="form-control" value="20"></div>
+      <div class="form-group"><label class="form-label">H. Travaux Dirigés</label><input type="number" id="c-td" class="form-control" value="10"></div>
+      <div class="form-group"><label class="form-label">H. Travaux Pratiques</label><input type="number" id="c-tp" class="form-control" value="0"></div>
+      <div class="form-group"><label class="form-label">Professeur</label>
+        <select id="c-prof" class="form-control"><option>Prof. Moukoko</option><option>Prof. Martin IBARA</option></select></div>
+    </div>`,
+    [{ label:'Créer', cls:'btn-primary', fn:'saveCourse()' }, { label:'Annuler', cls:'btn-outline', fn:'Modal.close()' }]
+  );
+}
+function saveCourse() {
+  const name = document.getElementById('c-name')?.value?.trim();
+  if (!name) { showToast('Nom obligatoire.','warning'); return; }
+  FB_COURSES.push({ id:Date.now(), code:document.getElementById('c-code')?.value, name, ue:'—', professor:document.getElementById('c-prof')?.value, credits:parseInt(document.getElementById('c-cred')?.value||4), coefficient:parseFloat(document.getElementById('c-coef')?.value||1), hours_cm:parseInt(document.getElementById('c-cm')?.value||0), hours_td:parseInt(document.getElementById('c-td')?.value||0), hours_tp:parseInt(document.getElementById('c-tp')?.value||0) });
+  renderCourses(FB_COURSES); Modal.close();
+  showToast('✅ Matière créée !','success');
+  Security.log('course_created', { name });
+}
+
+function addRoom() {
+  Modal.show('Nouvelle Salle',
+    `<div class="form-grid-2">
+      <div class="form-group"><label class="form-label">Nom</label><input id="r-name" class="form-control" placeholder="Salle 301"></div>
+      <div class="form-group"><label class="form-label">Capacité</label><input type="number" id="r-cap" class="form-control" value="40" min="1"></div>
+      <div class="form-group"><label class="form-label">Type</label>
+        <select id="r-type" class="form-control"><option value="classroom">Salle de cours</option><option value="lab">Laboratoire</option><option value="amphitheater">Amphithéâtre</option></select></div>
+      <div class="form-group"><label class="form-label">Campus</label>
+        <select id="r-campus" class="form-control"><option>Brazzaville</option><option>Pointe-Noire</option></select></div>
+    </div>`,
+    [{ label:'Créer', cls:'btn-primary', fn:'saveRoom()' }, { label:'Annuler', cls:'btn-outline', fn:'Modal.close()' }]
+  );
+}
+function saveRoom() {
+  const name = document.getElementById('r-name')?.value?.trim();
+  if (!name) { showToast('Nom obligatoire.','warning'); return; }
+  FB_ROOMS.push({ id:Date.now(), name, campus:document.getElementById('r-campus')?.value, capacity:parseInt(document.getElementById('r-cap')?.value||30), type:document.getElementById('r-type')?.value, available:true });
+  renderRooms(FB_ROOMS); Modal.close();
+  showToast('✅ Salle créée !','success');
+}
+
+function addProfessor() {
+  Modal.show('Nouvel Enseignant',
+    `<div class="form-grid-2">
+      <div class="form-group"><label class="form-label">Nom complet</label><input id="p-name" class="form-control" required placeholder="Prof. Prénom NOM"></div>
+      <div class="form-group"><label class="form-label">Email</label><input type="email" id="p-email" class="form-control"></div>
+      <div class="form-group"><label class="form-label">Département</label><input id="p-dept" class="form-control"></div>
+      <div class="form-group"><label class="form-label">Spécialité</label><input id="p-spec" class="form-control"></div>
+      <div class="form-group"><label class="form-label">Grade</label>
+        <select id="p-grade" class="form-control"><option>Assistant</option><option>Maître de Conférences</option><option>Professeur</option><option>Chargé de cours</option></select></div>
+    </div>`,
+    [{ label:'Créer', cls:'btn-primary', fn:'saveProfessor()' }, { label:'Annuler', cls:'btn-outline', fn:'Modal.close()' }]
+  );
+}
+function saveProfessor() {
+  const name = document.getElementById('p-name')?.value?.trim();
+  if (!name) { showToast('Nom obligatoire.','warning'); return; }
+  FB_PROFESSORS.push({ id:Date.now(), name, department:document.getElementById('p-dept')?.value, speciality:document.getElementById('p-spec')?.value, grade:document.getElementById('p-grade')?.value, courses:0 });
+  renderProfessors(FB_PROFESSORS); Modal.close();
+  showToast('✅ Enseignant créé !','success');
+  Security.log('professor_created', { name });
+}
+
+function assignCourses(id) {
+  const p = FB_PROFESSORS.find(x=>x.id===id);
+  Modal.show(`Attribution des cours — ${p?.name}`,
+    `<p class="text-muted-sm mb-15">Sélectionnez les matières à attribuer :</p>
+    ${FB_COURSES.map(c=>`<label class="d-flex align-center gap-10" style="padding:8px;border:1px solid #eee;border-radius:5px;margin-bottom:6px;cursor:pointer;">
+      <input type="checkbox"> <span><strong>${c.code}</strong> — ${c.name}</span></label>`).join('')}`,
+    [{ label:'Attribuer', cls:'btn-primary', fn:'saveAttribution()' }, { label:'Annuler', cls:'btn-outline', fn:'Modal.close()' }]
+  );
+}
+function saveAttribution() {
+  const checked = document.querySelectorAll('#itp-modal input[type=checkbox]:checked').length;
+  Modal.close();
+  showToast(`✅ ${checked} cours attribués !`,'success');
+}
+
+function editSemester(id)  { showToast('Édition — bientôt disponible.','info'); }
+function editUE(id)        { showToast('Édition — bientôt disponible.','info'); }
+function editCourse(id)    { showToast('Édition — bientôt disponible.','info'); }
+function editRoom(id)      { showToast('Édition — bientôt disponible.','info'); }
+function editProfessor(id) { showToast('Édition — bientôt disponible.','info'); }
+function deleteItem(type, id) {
+  if (!confirm(`Supprimer ce(tte) ${type} ?`)) return;
+  showToast(`${type} supprimé(e).`,'success');
+}
+function refreshAll() { loadAll(); showToast('Données actualisées.','info'); }
+</script>
+<script>if('serviceWorker' in navigator){navigator.serviceWorker.register('../sw.js').catch(()=>{})}</script>
+</body></html>

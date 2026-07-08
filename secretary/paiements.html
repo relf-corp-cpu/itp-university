@@ -1,0 +1,81 @@
+<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Gestion des Paiements — ITP University</title>
+<link rel="stylesheet" href="../assets/css/style.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+<link rel="manifest" href="../manifest.json"></head><body>
+<a href="#main-content" class="sr-only">Aller au contenu principal</a>
+<div class="dashboard-layout">
+<aside class="sidebar" role="complementary" aria-label="Menu secrétariat">
+  <h3>Secrétariat</h3>
+  <nav role="navigation" style="display:flex;flex-direction:column;gap:10px;margin-top:20px;">
+    <a href="index.html"        class="nav-link"><i class="fas fa-user-plus"></i> Inscriptions</a>
+    <a href="attestations.html" class="nav-link"><i class="fas fa-file-alt"></i> Attestations</a>
+    <a href="reclamations.html" class="nav-link"><i class="fas fa-exclamation-circle"></i> Réclamations</a>
+    <a href="paiements.html"    class="nav-link"><i class="fas fa-wallet"></i> Paiements</a>
+    <a href="etudiants.html"    class="nav-link"><i class="fas fa-users"></i> Étudiants</a>
+    <a href="evenements.html"   class="nav-link"><i class="fas fa-calendar-alt"></i> Événements</a>
+    <a href="#" onclick="if(confirm('Se déconnecter ?')){localStorage.clear();window.location='../auth/login.html';}" class="nav-link"><i class="fas fa-sign-out-alt"></i> Déconnexion</a>
+  </nav>
+</aside>
+<main class="dashboard-main" id="main-content" role="main">
+
+  <div class="page-header">
+    <div><h2 class="page-title">Gestion des Paiements</h2><p class="text-muted-sm m-0">Suivi et validation des paiements étudiants</p></div>
+    <div class="d-flex gap-10">
+      <button class="btn-outline" onclick="Excel.exportCSV(FB_PAY,'paiements_secr.csv')"><i class="fas fa-file-excel"></i> Export</button>
+      <button class="btn-primary" onclick="validatePending()"><i class="fas fa-check-double"></i> Valider en attente</button>
+    </div>
+  </div>
+  <div class="kpi-row mb-30">
+    <div class="stat-card" style="border-left-color:#28a745;"><p class="stat-label">Validés (mois)</p><div class="stat-val" id="k-month">—</div></div>
+    <div class="stat-card" style="border-left-color:#f57c00;"><p class="stat-label">En attente</p><div class="stat-val" id="k-pend">—</div></div>
+    <div class="stat-card" style="border-left-color:var(--dark-blue);"><p class="stat-label">Total collecté</p><div class="stat-val" id="k-total">—</div></div>
+    <div class="stat-card" style="border-left-color:var(--red-itp);"><p class="stat-label">Dettes actives</p><div class="stat-val" id="k-debt">—</div></div>
+  </div>
+  <div class="card" style="padding:0;overflow:hidden;">
+    <div class="table-wrapper">
+      <table class="data-table" role="table"><thead><tr><th>Étudiant</th><th>Montant</th><th>Type</th><th>Méthode</th><th>Réf.</th><th>Date</th><th>Statut</th><th>Action</th></tr></thead>
+      <tbody id="pay-table"></tbody></table>
+    </div>
+  </div>
+  <script>
+  const FB_PAY=[
+    {id:1,student:"MACKAYA Djepht",amount:50000,type:"Inscription",method:"MTN",ref:"MTN-ITP-000001",date:"2026-01-10",status:"completed"},
+    {id:2,student:"M'BOKA Alice",amount:200000,type:"Scolarité T1",method:"Airtel",ref:"ATL-ITP-000002",date:"2026-03-15",status:"completed"},
+    {id:3,student:"TRAORÉ Moussa",amount:150000,type:"Scolarité T2",method:"MTN",ref:null,date:null,status:"pending"},
+    {id:4,student:"LOUZOLO Patrick",amount:25000,type:"Rattrapage",method:"Cash",ref:"CSH-ITP-000004",date:"2026-06-01",status:"completed"},
+  ];
+  let pays = [...FB_PAY];
+  function renderPay(list) {
+    const completed = pays.filter(p=>p.status==="completed");
+    document.getElementById("k-month").textContent = completed.length;
+    document.getElementById("k-pend").textContent  = pays.filter(p=>p.status==="pending").length;
+    document.getElementById("k-total").textContent = (completed.reduce((s,p)=>s+p.amount,0)/1000).toFixed(0)+"K";
+    document.getElementById("k-debt").textContent  = pays.filter(p=>p.status==="pending").length;
+    document.getElementById("pay-table").innerHTML = list.map(p => {
+      const st = p.status==="completed" ? "<span class=\"badge badge-success\">✓ Validé</span>" : "<span class=\"badge badge-warning\">⏳ En attente</span>";
+      const btn = p.status==="pending" ? "<button class=\"btn-success\" style=\"padding:4px 12px;font-size:0.78rem;\" onclick=\"validatePay("+p.id+")\" >Valider</button>" : "—";
+      return "<tr><td><strong>"+Security.sanitize(p.student)+"</strong></td><td style=\"font-weight:bold;\">"+(p.amount/1000).toFixed(0)+"K FCFA</td><td>"+p.type+"</td><td>"+p.method+"</td><td><code class=\"fs-xs\">"+(p.ref||"—")+"</code></td><td class=\"text-muted-sm\">"+(p.date?new Date(p.date).toLocaleDateString("fr-FR"):"—")+"</td><td>"+st+"</td><td>"+btn+"</td></tr>";
+    }).join("");
+  }
+  function validatePay(id) {
+    const p = pays.find(x=>x.id===id); if(!p) return;
+    p.status="completed"; p.ref="CSH-ITP-"+String(id).padStart(6,"0"); p.date=new Date().toISOString().split("T")[0];
+    renderPay(pays); showToast("✅ Paiement validé !","success"); Security.log("payment_validated",{id});
+  }
+  function validatePending() {
+    pays.filter(p=>p.status==="pending").forEach(p=>validatePay(p.id));
+  }
+  renderPay(pays);
+  </script>
+</main>
+</div>
+<script src="../assets/js/main.js"></script>
+<script src="../assets/js/config.js"></script>
+<script src="../assets/js/api.js"></script>
+<script src="../assets/js/utils.js"></script>
+<script src="../assets/js/auth-guard.js" data-role="secretary,admin"></script>
+<script src="../assets/js/tests.js"></script>
+<script src="../assets/js/components.js"></script>
+<script>if('serviceWorker' in navigator){navigator.serviceWorker.register('../sw.js').catch(()=>{})}</script>
+</body></html>

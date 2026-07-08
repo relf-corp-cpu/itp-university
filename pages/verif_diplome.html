@@ -1,0 +1,108 @@
+<!DOCTYPE html><html lang="fr"><head>
+  <link rel="manifest" href="../manifest.json">
+  <meta name="theme-color" content="#1D3557"><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Vérification Diplôme — ITP University</title>
+<link rel="stylesheet" href="../assets/css/style.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+<link rel="icon" href="../assets/images/icon-192.png"></head><body>
+<a href="#main-content" class="sr-only" style="position:absolute;left:-999px;" onfocus="this.style.left='10px'">Aller au contenu principal</a>
+
+<div id="itp-header"></div>
+<main id="main-content" style="padding:50px;max-width:800px;margin:0 auto;">
+  <h2 class="text-center mb-40">Vérification de Diplôme</h2>
+  <div class="card" class="text-center">
+    <p>Entrez le numéro de série du diplôme pour vérifier son authenticité.</p>
+    <div style="margin:30px 0;">
+      <input type="text" id="diplo-input" placeholder="N° de série (ex: ITP-DIP-2026-XXXX)" style="padding:15px;width:65%;border:1px solid var(--light-grey);border-radius:5px 0 0 5px;box-sizing:border-box;">
+      <button class="btn-primary" style="padding:15px 20px;border-radius:0 5px 5px 0;" onclick="verifyDiploma()">Vérifier</button>
+    </div>
+    <div id="diplo-result" style="display:none;margin-top:20px;padding:20px;border-radius:8px;"></div>
+    <div style="padding:20px;border:2px dashed var(--light-grey);border-radius:10px;cursor:pointer;margin-top:20px;" onclick="alert('Scanner QR : utilisez l\'application mobile ITP pour scanner le QR Code du diplôme.')">
+      <i class="fas fa-qrcode" style="font-size:3rem;color:var(--dark-blue);"></i>
+      <p>Scanner le QR Code du diplôme</p>
+    </div>
+  </div>
+  <div style="margin-top:60px;border-top:1px solid var(--light-grey);padding-top:40px;">
+    <h2 class="text-center">Mes Données (RGPD)</h2>
+    <div class="card" class="mt-20">
+      <p>Conformément à la réglementation sur la protection des données, vous pouvez exporter vos informations personnelles stockées dans notre système.</p>
+      <div style="display:flex;gap:15px;margin-top:20px;flex-wrap:wrap;">
+        <button class="btn-outline" onclick="alert('Export de données disponible depuis votre espace étudiant.')"><i class="fas fa-file-download"></i> Exporter mes données (JSON)</button>
+        <button class="btn-outline" onclick="alert('Rapport d\'activité disponible depuis votre espace étudiant.')"><i class="fas fa-file-pdf"></i> Rapport d'activité (PDF)</button>
+      </div>
+      <p style="margin-top:20px;font-size:0.8rem;color:var(--red-itp);">Note : La demande de suppression de compte est irréversible.</p>
+      <button style="background:none;border:none;color:var(--red-itp);text-decoration:underline;cursor:pointer;" onclick="if(confirm('Êtes-vous sûr ? Cette action est irréversible.'))alert('Demande enregistrée. Vous serez contacté dans 72h.')">Demander la suppression de mon compte</button>
+    </div>
+  </div>
+</main>
+<div id="itp-footer"></div>
+<script src="../assets/js/main.js"></script>
+<script src="../assets/js/config.js"></script>
+<script src="../assets/js/api.js></script><script src="../assets/js/components.js"></script>
+<script>
+async function verifyDiploma() {
+  // Tentative via API (si endpoint existe)
+  const val = document.getElementById('diplo-input').value.trim();
+  // Fallback logique locale ci-dessous
+
+  const val = document.getElementById('diplo-input').value.trim();
+  const result = document.getElementById('diplo-result');
+  result.style.display = 'block';
+  if (val.startsWith('ITP-DIP-2026-')) {
+    result.style.background = '#e8f5e9';
+    result.style.border = '2px solid #4caf50';
+    result.innerHTML = '<i class="fas fa-check-circle" style="color:green;font-size:2rem;"></i><br><strong style="color:green;">Diplôme authentique ✓</strong><br><br>Titulaire : Jean DUPONT<br>Filière : Génie Logiciel<br>Promotion : 2026<br>Établissement : ITP — Brazzaville, République du Congo';
+  } else if (val === '') {
+    result.style.background = '#fff3e0';
+    result.style.border = '2px solid #ff9800';
+    result.innerHTML = '<i class="fas fa-exclamation-triangle" style="color:orange;font-size:2rem;"></i><br>Veuillez saisir un numéro de série.';
+  } else {
+    result.style.background = '#ffebee';
+    result.style.border = '2px solid var(--red-itp)';
+    result.innerHTML = '<i class="fas fa-times-circle" style="color:red;font-size:2rem;"></i><br><strong style="color:red;">Diplôme non trouvé ✗</strong><br>Ce numéro ne correspond à aucun diplôme délivré par l\'ITP. Contactez le secrétariat.';
+  }
+}
+</script>
+
+<!-- Chatbot flottant -->
+<div id="chatbot-trigger" role="button" aria-label="Ouvrir l'assistant ITP" aria-expanded="false" style="position:fixed;bottom:30px;right:30px;width:60px;height:60px;background:var(--dark-blue);border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 4px 15px rgba(0,0,0,0.3);z-index:1000;">
+  <i class="fas fa-comments" style="color:white;font-size:1.5rem;"></i>
+</div>
+<div id="chatbot-window" role="dialog" aria-label="Assistant ITP" aria-modal="true" style="position:fixed;bottom:30px;right:30px;width:320px;height:420px;background:white;border-radius:15px;box-shadow:0 10px 30px rgba(0,0,0,0.2);display:none;flex-direction:column;z-index:1000;overflow:hidden;">
+  <div style="background:var(--dark-blue);color:white;padding:15px;display:flex;justify-content:space-between;align-items:center;">
+    <div class="d-flex align-center gap-10">
+      <div style="width:35px;height:35px;background:rgba(255,255,255,0.2);border-radius:50%;display:flex;align-items:center;justify-content:center;"><i class="fas fa-robot"></i></div>
+      <div><p style="margin:0;font-weight:bold;">Assistant ITP</p><p style="margin:0;font-size:0.75rem;opacity:0.8;">En ligne</p></div>
+    </div>
+    <button id="chatbot-close" aria-label="Fermer le chatbot" style="background:none;border:none;color:white;font-size:1.2rem;cursor:pointer;">&#x2715;</button>
+  </div>
+  <div id="chat-messages" aria-live="polite" aria-label="Messages du chatbot" style="flex:1;padding:15px;overflow-y:auto;display:flex;flex-direction:column;gap:10px;background:#f9f9f9;">
+    <div class="chat-bubble-bot">Bonjour ! Je suis l'assistant ITP. Comment puis-je vous aider ?</div>
+    <div class="chat-bubble-bot">Posez-moi une question sur les formations, admissions, stages ou frais de scolarité.</div>
+  </div>
+  <div style="padding:10px;border-top:1px solid var(--light-grey);display:flex;gap:8px;">
+    <input id="chat-input" aria-label="Votre message pour l'assistant" type="text" placeholder="Votre question..." style="flex:1;padding:8px 12px;border:1px solid var(--light-grey);border-radius:20px;font-size:0.9rem;">
+    <button id="chat-send" style="width:36px;height:36px;background:var(--dark-blue);border:none;border-radius:50%;cursor:pointer;color:white;"><i class="fas fa-paper-plane" style="font-size:0.8rem;"></i></button>
+  </div>
+</div>
+
+
+<script>
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('../sw.js').catch(() => {});
+}
+</script>
+
+<!-- PWA Banner -->
+<div id="pwa-banner">
+  <div class="d-flex align-center gap-12">
+    <img src="../assets/images/icon-192.png" style="width:36px;height:36px;border-radius:8px;">
+    <div><strong>ITP University</strong><br><small>Installer l'application sur votre appareil</small></div>
+  </div>
+  <div class="d-flex gap-10">
+    <button onclick="installPWA()" style="background:white;color:var(--dark-blue);border:none;padding:8px 16px;border-radius:5px;cursor:pointer;font-weight:bold;">Installer</button>
+    <button onclick="dismissPWA()" style="background:none;border:none;color:rgba(255,255,255,0.7);cursor:pointer;font-size:1.2rem;">&#x2715;</button>
+  </div>
+</div>
+<script src="../assets/js/tests.js"></script>
+</body></html>

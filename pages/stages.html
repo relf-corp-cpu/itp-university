@@ -1,0 +1,149 @@
+<!DOCTYPE html><html lang="fr"><head>
+  <link rel="manifest" href="../manifest.json">
+  <meta name="theme-color" content="#1D3557"><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Stages — ITP University</title>
+<link rel="stylesheet" href="../assets/css/style.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+<link rel="icon" href="../assets/images/icon-192.png"></head><body>
+<a href="#main-content" class="sr-only" style="position:absolute;left:-999px;" onfocus="this.style.left='10px'">Aller au contenu principal</a>
+
+<div id="itp-header"></div>
+<main role="main" id="main-content" style="padding:50px;max-width:1100px;margin:0 auto;">
+  <h2 class="text-center mb-40">Stages &amp; Alternances</h2>
+  <div style="display:grid;grid-template-columns:2fr 1fr;gap:40px;">
+    <div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;flex-wrap:wrap;gap:10px;">
+        <h3 class="m-0">Offres disponibles</h3>
+        <span id="offers-status" class="text-muted-sm"><i class="fas fa-spinner fa-spin"></i></span>
+      </div>
+      <div id="offers-list">
+        <div style="text-align:center;padding:20px;color:#999;"><i class="fas fa-spinner fa-spin fa-2x"></i></div>
+      </div>
+      <!-- Dépôt rapport -->
+      <div class="card" style="margin-top:30px;background:#f1f1f1;">
+        <h3>Déposer un rapport de stage</h3>
+        <p>Soumettez votre rapport PDF pour validation.</p>
+        <div style="display:flex;gap:10px;margin-top:15px;flex-wrap:wrap;">
+          <input type="file" id="report-file" accept=".pdf" style="flex:1;padding:10px;background:white;border:1px solid #ddd;border-radius:5px;min-width:180px;">
+          <button class="btn-primary" onclick="submitReport()">Envoyer</button>
+        </div>
+        <p id="report-msg" style="display:none;margin-top:10px;color:green;"></p>
+      </div>
+    </div>
+    <aside>
+      <div class="card">
+        <h3>Espace Entreprise</h3>
+        <p>Recrutez nos talents ?</p>
+        <button class="btn-outline" style="width:100%;margin-top:10px;" onclick="publishOffer()">Publier une offre</button>
+        <button class="btn-outline" style="width:100%;margin-top:10px;" onclick="alert('CVthèque disponible sur demande.')">Consulter les CV</button>
+        <a href="contact.html" class="btn-outline" style="display:block;text-align:center;margin-top:10px;">Nous contacter</a>
+      </div>
+      <div class="card" style="margin-top:25px;">
+        <h3>Conseils pratiques</h3>
+        <ul style="padding-left:20px;font-size:0.9rem;">
+          <li style="margin-bottom:8px;"><a href="#" style="color:var(--dark-blue);">Rédiger son CV</a></li>
+          <li style="margin-bottom:8px;"><a href="#" style="color:var(--dark-blue);">Réussir son entretien</a></li>
+          <li style="margin-bottom:8px;"><a href="#" style="color:var(--dark-blue);">Rapport de stage type</a></li>
+          <li style="margin-bottom:8px;"><a href="#" style="color:var(--dark-blue);">Trouver un tuteur</a></li>
+        </ul>
+      </div>
+      <div class="card" style="margin-top:25px;background:var(--dark-blue);color:white;">
+        <h3 style="color:white;">Stats ITP</h3>
+        <p><strong>98%</strong> de nos diplômés en stage dans leur domaine</p>
+        <p><strong>50+</strong> entreprises partenaires à Brazzaville & Pointe-Noire</p>
+      </div>
+    </aside>
+  </div>
+</main>
+<div id="itp-footer"></div>
+<script src="../assets/js/main.js"></script>
+<script src="../assets/js/config.js"></script>
+<script src="../assets/js/api.js"></script>
+<script src="../assets/js/utils.js"></script>
+<script src="../assets/js/tests.js"></script>
+<script src="../assets/js/components.js"></script>
+<script>
+const COMPANY_COLORS = { 'MTN':'#ffcc00', 'Airtel':'var(--red-itp)', 'SG':'#4caf50', 'Ministère':'var(--dark-blue)', 'Autre':'#607d8b' };
+
+const FB_OFFERS = [
+  { id:1, company:'MTN',       title:'Développeur Mobile Flutter',     duration:'3–6 mois', location:'Brazzaville', description:'Développement d\'applications mobiles pour les services MTN Money.' },
+  { id:2, company:'Airtel',    title:'Assistant Administrateur Réseaux',duration:'6 mois',   location:'Brazzaville', description:'Administration des infrastructures réseau et support technique.' },
+  { id:3, company:'SG',        title:'Stagiaire Sécurité Informatique', duration:'4 mois',   location:'Brazzaville', description:'Audit de sécurité et mise en place de politiques de protection des données.' },
+  { id:4, company:'Ministère', title:'Développeur Web Full-Stack',      duration:'3 mois',   location:'Brazzaville', description:'Développement de plateformes numériques pour les services publics congolais.' },
+];
+
+async function loadOffers() {
+  let offers;
+  try {
+    offers = await ITP_API.internships.getOffers();
+    if (!offers || !offers.length) offers = FB_OFFERS;
+    else offers = offers.map(o => ({ ...FB_OFFERS[0], ...o, company: o.companies?.name || o.company || 'Entreprise', title: o.title || 'Stage' }));
+  } catch { offers = FB_OFFERS; }
+  renderOffers(offers);
+}
+
+function renderOffers(offers) {
+  document.getElementById('offers-status').textContent = `${offers.length} offre(s)`;
+  document.getElementById('offers-list').innerHTML = offers.map(o => {
+    const abbr  = (o.company || '').substring(0,3).toUpperCase();
+    const color = COMPANY_COLORS[o.company] || COMPANY_COLORS['Autre'];
+    return `
+      <div class="card" style="display:flex;gap:15px;align-items:center;margin-bottom:15px;flex-wrap:wrap;">
+        <div style="width:60px;height:60px;background:${color};border-radius:10px;display:flex;align-items:center;justify-content:center;font-weight:bold;color:${color==='#ffcc00'?'#333':'white'};font-size:0.75rem;flex-shrink:0;">${abbr}</div>
+        <div class="flex-1">
+          <h4 style="margin:0 0 4px;">${o.title}</h4>
+          <p style="margin:0;color:#666;font-size:0.85rem;">${o.company} | ${o.location||'Brazzaville'} | ${o.duration||'—'}</p>
+          <p style="margin:4px 0 0;font-size:0.85rem;">${o.description||''}</p>
+        </div>
+        <button class="btn-primary" style="flex-shrink:0;" onclick="applyOffer(${o.id},'${(o.title||'').replace(/'/g,"\\'")}')">Postuler</button>
+      </div>`;
+  }).join('') || '<p style="color:#999;text-align:center;">Aucune offre disponible.</p>';
+}
+
+async function applyOffer(id, title) {
+  const user = ITP_API.auth.currentUser();
+  if (!user) { if (confirm('Connectez-vous pour postuler.')) window.location.href='../auth/login.html'; return; }
+  try {
+    await ITP_API.internships.apply(user.student_id || 1, id);
+  } catch {}
+  alert(`✅ Candidature envoyée pour "${title}" !\nVous serez contacté sous 48h.`);
+}
+
+function submitReport() {
+  const file = document.getElementById('report-file').files[0];
+  const msg  = document.getElementById('report-msg');
+  if (!file) { alert('Sélectionnez un fichier PDF.'); return; }
+  msg.style.display = 'block';
+  msg.textContent   = `✅ Rapport "${file.name}" soumis avec succès ! Il sera examiné par votre tuteur.`;
+  document.getElementById('report-file').value = '';
+}
+
+function publishOffer() {
+  const user = ITP_API.auth.currentUser();
+  if (!user || !['admin','secretary'].includes(user.role))
+    alert('Contactez le secrétariat pour publier une offre : contact@itp-university.cg');
+  else
+    alert('Module de publication disponible dans l\'espace secrétariat.');
+}
+
+loadOffers();
+</script>
+
+<script>
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('../sw.js').catch(() => {});
+}
+</script>
+
+<!-- PWA Banner -->
+<div id="pwa-banner">
+  <div class="d-flex align-center gap-12">
+    <img src="../assets/images/icon-192.png" style="width:36px;height:36px;border-radius:8px;">
+    <div><strong>ITP University</strong><br><small>Installer l'application sur votre appareil</small></div>
+  </div>
+  <div class="d-flex gap-10">
+    <button onclick="installPWA()" style="background:white;color:var(--dark-blue);border:none;padding:8px 16px;border-radius:5px;cursor:pointer;font-weight:bold;">Installer</button>
+    <button onclick="dismissPWA()" style="background:none;border:none;color:rgba(255,255,255,0.7);cursor:pointer;font-size:1.2rem;">&#x2715;</button>
+  </div>
+</div>
+</body></html>

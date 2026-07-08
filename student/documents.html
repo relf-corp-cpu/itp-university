@@ -1,0 +1,259 @@
+<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Mes Documents — ITP University</title>
+<link rel="stylesheet" href="../assets/css/style.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+<link rel="icon" href="../assets/images/icon-192.png">
+<link rel="manifest" href="../manifest.json"></head><body>
+<a href="#main-content" class="sr-only">Aller au contenu principal</a>
+<div class="dashboard-layout">
+<aside class="sidebar" role="complementary">
+  <h3>Espace Étudiant</h3>
+    <nav role="navigation" aria-label="Navigation principale" style="display:flex;flex-direction:column;gap:10px;margin-top:20px;">
+    <a href="index.html"           class="nav-link"><i class="fas fa-home"></i> Tableau de bord</a>
+    <a href="notes.html"           class="nav-link"><i class="fas fa-graduation-cap"></i> Mes Notes</a>
+    <a href="emploi_du_temps.html" class="nav-link"><i class="fas fa-calendar-alt"></i> Emploi du temps</a>
+    <a href="paiements.html"       class="nav-link"><i class="fas fa-wallet"></i> Paiements</a>
+    <a href="documents.html"       class="nav-link"><i class="fas fa-file-alt"></i> Mes Documents</a>
+    <a href="carte_numerique.html" class="nav-link"><i class="fas fa-id-card"></i> Carte Numérique</a>
+    <a href="reclamations.html"    class="nav-link"><i class="fas fa-exclamation-circle"></i> Réclamations</a>
+    <a href="profil.html"          class="nav-link"><i class="fas fa-user"></i> Mon Profil</a>
+    <a href="#" onclick="if(confirm('Se déconnecter ?')){localStorage.clear();window.location='../auth/login.html';}" class="nav-link"><i class="fas fa-sign-out-alt"></i> Déconnexion</a>
+  </nav>
+</aside>
+<main class="dashboard-main" id="main-content" role="main">
+  <div class="page-header">
+    <div>
+      <h2 class="page-title">Mes Documents</h2>
+      <p class="text-muted-sm m-0">Demandez vos attestations, relevés et documents officiels.</p>
+    </div>
+  </div>
+
+  <div id="tabs-docs">
+    <div class="tabs">
+      <button class="tab active" data-tab="tab-demande">Nouvelle demande</button>
+      <button class="tab" data-tab="tab-mes-docs">Mes demandes</button>
+      <button class="tab" data-tab="tab-dettes">Dettes & Frais</button>
+      <button class="tab" data-tab="tab-telechargement">Téléchargements</button>
+    </div>
+
+    <!-- Tab 1 : Nouvelle demande -->
+    <div class="tab-panel active" id="tab-demande">
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:20px;">
+
+        <div class="card text-center" style="cursor:pointer;transition:transform 0.2s;border-top:4px solid var(--dark-blue);" onmouseover="this.style.transform='translateY(-3px)'" onmouseout="this.style.transform=''"
+          onclick="requestDoc('attestation','Attestation de Scolarité')">
+          <i class="fas fa-file-alt" style="font-size:2.5rem;color:var(--dark-blue);margin-bottom:15px;display:block;"></i>
+          <h4 class="m-0 mb-8">Attestation de Scolarité</h4>
+          <p class="text-muted-sm mb-15">Prouve votre inscription en cours d'année</p>
+          <span class="badge badge-info">Délai : 48h</span>
+          <button class="btn-primary mt-10" class="w-full">Demander</button>
+        </div>
+
+        <div class="card text-center" style="cursor:pointer;transition:transform 0.2s;border-top:4px solid var(--red-itp);" onmouseover="this.style.transform='translateY(-3px)'" onmouseout="this.style.transform=''"
+          onclick="requestDoc('releve','Relevé de Notes')">
+          <i class="fas fa-graduation-cap" style="font-size:2.5rem;color:var(--red-itp);margin-bottom:15px;display:block;"></i>
+          <h4 class="m-0 mb-8">Relevé de Notes</h4>
+          <p class="text-muted-sm mb-15">Notes officielles de toutes les matières</p>
+          <span class="badge badge-warning">Délai : 72h</span>
+          <button class="btn-primary mt-10" class="w-full">Demander</button>
+        </div>
+
+        <div class="card text-center" style="cursor:pointer;transition:transform 0.2s;border-top:4px solid #2a9d8f);" onmouseover="this.style.transform='translateY(-3px)'" onmouseout="this.style.transform=''"
+          onclick="requestDoc('carte','Carte Étudiante')">
+          <i class="fas fa-id-card" style="font-size:2.5rem;color:#2a9d8f;margin-bottom:15px;display:block;"></i>
+          <h4 class="m-0 mb-8">Carte Étudiante</h4>
+          <p class="text-muted-sm mb-15">Remplacement ou renouvellement</p>
+          <span class="badge badge-success">Délai : 24h</span>
+          <button class="btn-primary mt-10" class="w-full">Demander</button>
+        </div>
+
+        <div class="card text-center" style="cursor:pointer;transition:transform 0.2s;border-top:4px solid #e9c46a;" onmouseover="this.style.transform='translateY(-3px)'" onmouseout="this.style.transform=''"
+          onclick="requestDoc('autre','Autre Document')">
+          <i class="fas fa-folder-open" style="font-size:2.5rem;color:#e9c46a;margin-bottom:15px;display:block;"></i>
+          <h4 class="m-0 mb-8">Autre document</h4>
+          <p class="text-muted-sm mb-15">Certificat de résidence, lettre de recommandation...</p>
+          <span class="badge badge-info">Délai : variable</span>
+          <button class="btn-primary mt-10" class="w-full">Demander</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tab 2 : Mes demandes -->
+    <div class="tab-panel" id="tab-mes-docs">
+      <div class="card">
+        <div class="d-flex justify-between align-center mb-20">
+          <h3 class="m-0">Historique de mes demandes</h3>
+          <button class="btn-outline" onclick="loadMyRequests()"><i class="fas fa-sync"></i></button>
+        </div>
+        <div class="table-wrapper">
+          <table class="data-table" role="table">
+            <thead><tr><th>Type</th><th>Date demande</th><th>Statut</th><th>Action</th></tr></thead>
+            <tbody id="requests-table">
+              <tr><td colspan="4" class="text-center text-muted-sm" style="padding:20px;">
+                <i class="fas fa-spinner fa-spin"></i> Chargement...
+              </td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tab 3 : Dettes -->
+    <div class="tab-panel" id="tab-dettes">
+      <div class="card mb-20" style="background:#fff3e0;border-left:5px solid #f57c00;">
+        <p class="m-0"><i class="fas fa-info-circle" style="color:#f57c00;"></i> <strong>Attention :</strong>
+        Les documents officiels ne peuvent être délivrés qu'après règlement de toutes les dettes.</p>
+      </div>
+      <div class="card">
+        <div class="d-flex justify-between align-center mb-20">
+          <h3 class="m-0">Mes dettes &amp; frais en attente</h3>
+          <span id="total-debt" style="font-size:1.2rem;font-weight:bold;color:var(--red-itp);"></span>
+        </div>
+        <div id="debts-list"></div>
+        <div id="debt-free" style="display:none;padding:20px;text-align:center;color:#2e7d32;">
+          <i class="fas fa-check-circle" style="font-size:2rem;margin-bottom:10px;display:block;"></i>
+          <p class="m-0 fw-bold">Aucune dette — vous êtes en règle !</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tab 4 : Téléchargements -->
+    <div class="tab-panel" id="tab-telechargement">
+      <div class="card">
+        <h3 class="mb-20">Documents disponibles au téléchargement</h3>
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:15px;">
+          <div class="d-flex align-center gap-15" style="padding:15px;border:1px solid var(--light-grey);border-radius:8px;">
+            <i class="fas fa-file-pdf" style="font-size:2rem;color:var(--red-itp);flex-shrink:0;"></i>
+            <div class="flex-1">
+              <p class="m-0 fw-bold">Guide de l'étudiant ITP 2025-2026</p>
+              <p class="text-muted-sm m-0">PDF · 2.4 Mo</p>
+            </div>
+            <button class="btn-outline" style="padding:6px 12px;" onclick="downloadDoc('Guide étudiant')"><i class="fas fa-download"></i></button>
+          </div>
+          <div class="d-flex align-center gap-15" style="padding:15px;border:1px solid var(--light-grey);border-radius:8px;">
+            <i class="fas fa-file-pdf" style="font-size:2rem;color:var(--red-itp);flex-shrink:0;"></i>
+            <div class="flex-1">
+              <p class="m-0 fw-bold">Règlement intérieur ITP</p>
+              <p class="text-muted-sm m-0">PDF · 1.1 Mo</p>
+            </div>
+            <button class="btn-outline" style="padding:6px 12px;" onclick="downloadDoc('Règlement intérieur')"><i class="fas fa-download"></i></button>
+          </div>
+          <div class="d-flex align-center gap-15" style="padding:15px;border:1px solid var(--light-grey);border-radius:8px;">
+            <i class="fas fa-file-word" style="font-size:2rem;color:#1565c0;flex-shrink:0;"></i>
+            <div class="flex-1">
+              <p class="m-0 fw-bold">Modèle de mémoire ITP</p>
+              <p class="text-muted-sm m-0">DOCX · 450 Ko</p>
+            </div>
+            <button class="btn-outline" style="padding:6px 12px;" onclick="downloadDoc('Modèle mémoire')"><i class="fas fa-download"></i></button>
+          </div>
+          <div class="d-flex align-center gap-15" style="padding:15px;border:1px solid var(--light-grey);border-radius:8px;">
+            <i class="fas fa-file-excel" style="font-size:2rem;color:#2e7d32;flex-shrink:0;"></i>
+            <div class="flex-1">
+              <p class="m-0 fw-bold">Planning des examens 2026</p>
+              <p class="text-muted-sm m-0">PDF · 320 Ko</p>
+            </div>
+            <button class="btn-outline" style="padding:6px 12px;" onclick="downloadDoc('Planning examens')"><i class="fas fa-download"></i></button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</main>
+</div>
+
+<script src="../assets/js/main.js"></script>
+<script src="../assets/js/config.js"></script>
+<script src="../assets/js/api.js"></script>
+<script src="../assets/js/utils.js"></script>
+<script src="../assets/js/auth-guard.js" data-role="student"></script>
+<script src="../assets/js/tests.js"></script>
+<script src="../assets/js/components.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  initTabs('tabs-docs');
+  loadMyRequests();
+  loadDebts();
+});
+
+const DOC_LABELS = { attestation:'Attestation de Scolarité', releve:'Relevé de Notes', carte:'Carte Étudiante', autre:'Autre Document' };
+const FB_REQUESTS = [
+  { id:1, type:'attestation', date:'2026-06-10', status:'delivered' },
+  { id:2, type:'releve',      date:'2026-06-20', status:'ready'    },
+];
+const FB_DEBTS = [
+  { id:1, reason:"Scolarité — Tranche 2", amount:150000, due_date:'2026-06-30', status:'pending' },
+];
+let myRequests = [...FB_REQUESTS];
+
+async function loadMyRequests() {
+  const user = ITP_API.auth.currentUser();
+  try {
+    const data = await fetch(`${ITP_CONFIG.apiBase()}/document-requests`, { headers: ITP_CONFIG.authHeaders() }).then(r => r.json());
+    if (data?.length) myRequests = data;
+  } catch {}
+  renderRequests(myRequests);
+}
+
+function renderRequests(list) {
+  const sc = { pending:'badge-warning', ready:'badge-success', delivered:'badge-info' };
+  const sl = { pending:'⏳ En traitement', ready:'✅ Prêt à retirer', delivered:'📦 Remis' };
+  document.getElementById('requests-table').innerHTML = list.length
+    ? list.map(r => `<tr>
+        <td><i class="fas fa-file-alt" style="color:var(--dark-blue);"></i> ${DOC_LABELS[r.type]||r.type}</td>
+        <td class="text-muted-sm">${r.date ? new Date(r.date).toLocaleDateString('fr-FR') : '—'}</td>
+        <td><span class="badge ${sc[r.status]||''}">${sl[r.status]||r.status}</span></td>
+        <td>${r.status==='ready'
+          ? `<button class="btn-primary" style="padding:4px 12px;font-size:0.8rem;" onclick="collectDoc(${r.id})"><i class="fas fa-download"></i> Retirer</button>`
+          : '—'}</td>
+      </tr>`).join('')
+    : '<tr><td colspan="4" class="text-center text-muted-sm" style="padding:20px;">Aucune demande.</td></tr>';
+}
+
+async function requestDoc(type, label) {
+  const user = ITP_API.auth.currentUser();
+  try {
+    await fetch(`${ITP_CONFIG.apiBase()}/document-requests`, {
+      method:'POST', headers: ITP_CONFIG.authHeaders(),
+      body: JSON.stringify({ student_id: user?.student_id||1, type, status:'pending' })
+    });
+  } catch {}
+  myRequests.unshift({ id: Date.now(), type, date: new Date().toISOString(), status:'pending' });
+  renderRequests(myRequests);
+  Security.log('doc_requested', { type, label });
+  showToast(`✅ Demande de "${label}" enregistrée ! Délai : 48-72h.`, 'success', 5000);
+  Notifs.push('Demande de document', `Votre demande de ${label} a été enregistrée.`);
+}
+
+function collectDoc(id) {
+  myRequests = myRequests.map(r => r.id===id ? {...r, status:'delivered'} : r);
+  renderRequests(myRequests);
+  showToast('Document marqué comme remis.', 'info');
+}
+
+function loadDebts() {
+  const total = FB_DEBTS.reduce((s,d)=>s+d.amount,0);
+  if (!FB_DEBTS.length) {
+    document.getElementById('debt-free').style.display = 'block';
+    return;
+  }
+  document.getElementById('total-debt').textContent = `Total dû : ${total.toLocaleString('fr-FR')} FCFA`;
+  document.getElementById('debts-list').innerHTML = FB_DEBTS.map(d => `
+    <div class="d-flex justify-between align-center" style="padding:12px;border:1px solid #ffd0b0;background:#fff8f3;border-radius:6px;margin-bottom:8px;flex-wrap:wrap;gap:8px;">
+      <div>
+        <p class="m-0 fw-bold">${d.reason}</p>
+        <p class="text-muted-sm m-0">Échéance : ${d.due_date ? new Date(d.due_date).toLocaleDateString('fr-FR') : '—'}</p>
+      </div>
+      <div class="d-flex align-center gap-10">
+        <strong style="color:var(--red-itp);">${d.amount.toLocaleString('fr-FR')} FCFA</strong>
+        <a href="paiements.html" class="btn-primary" style="padding:6px 14px;font-size:0.85rem;">Payer</a>
+      </div>
+    </div>`).join('');
+}
+
+function downloadDoc(name) {
+  Security.log('doc_downloaded', { name });
+  showToast(`📥 Téléchargement de "${name}"...`, 'info', 3000);
+}
+</script>
+<script>if('serviceWorker' in navigator){navigator.serviceWorker.register('../sw.js').catch(()=>{})}</script>
+</body></html>

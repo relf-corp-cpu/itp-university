@@ -1,0 +1,102 @@
+<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Délibérations & Jury — ITP University</title>
+<link rel="stylesheet" href="../assets/css/style.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+<link rel="manifest" href="../manifest.json"></head><body>
+<a href="#main-content" class="sr-only">Aller au contenu principal</a>
+<div class="dashboard-layout">
+<aside class="sidebar" role="complementary" aria-label="Menu direction">
+  <h3>Direction</h3>
+  <nav role="navigation" aria-label="Navigation principale" style="display:flex;flex-direction:column;gap:10px;margin-top:20px;">
+    <a href="index.html"       class="nav-link"><i class="fas fa-chart-line"></i> Tableau de bord</a>
+    <a href="deliberations.html" class="nav-link active"><i class="fas fa-gavel"></i> Délibérations</a>
+    <a href="validation.html"  class="nav-link"><i class="fas fa-check-double"></i> Validation notes</a>
+    <a href="rapports.html"    class="nav-link"><i class="fas fa-file-pdf"></i> Rapports & PV</a>
+    <a href="emplois_du_temps.html" class="nav-link"><i class="fas fa-calendar-alt"></i> Emplois du temps</a>
+    <a href="bourses.html"     class="nav-link"><i class="fas fa-award"></i> Bourses</a>
+    <a href="#" onclick="if(confirm('Se déconnecter ?')){localStorage.clear();window.location='../auth/login.html';}" class="nav-link"><i class="fas fa-sign-out-alt"></i> Déconnexion</a>
+  </nav>
+</aside>
+<main class="dashboard-main" id="main-content" role="main">
+
+  <div class="page-header">
+    <div><h2 class="page-title">Délibérations & Jury</h2><p class="text-muted-sm m-0">Résultats officiels · Décisions du jury · PV</p></div>
+    <div class="d-flex gap-10">
+      <button class="btn-outline" onclick="generatePV()"><i class="fas fa-file-pdf"></i> Générer PV</button>
+      <button class="btn-primary" onclick="runDelib()"><i class="fas fa-gavel"></i> Lancer délibération</button>
+    </div>
+  </div>
+  <div class="card mb-20">
+    <div class="d-flex gap-10 flex-wrap align-center">
+      <select id="delib-prog" class="form-control" style="width:auto;" aria-label="Filière">
+        <option value="1">L3 Génie Logiciel</option>
+        <option value="2">L2 Réseaux & Télécoms</option>
+        <option value="3">L1 Informatique</option>
+      </select>
+      <select id="delib-year" class="form-control" style="width:auto;" aria-label="Année">
+        <option>2025-2026</option><option>2024-2025</option>
+      </select>
+      <button class="btn-primary" onclick="runDelib()"><i class="fas fa-sync"></i> Calculer</button>
+    </div>
+  </div>
+  <div id="delib-results" class="card" style="padding:0;overflow:hidden;">
+    <div class="table-wrapper">
+      <table class="data-table" role="table">
+        <thead><tr><th>Rang</th><th>Matricule</th><th>Nom</th><th>Moy.</th><th>Crédits</th><th>Mention</th><th>Statut Jury</th><th>Action</th></tr></thead>
+        <tbody id="delib-table"><tr><td colspan="8" class="text-center text-muted-sm" style="padding:20px;">Cliquez sur "Lancer délibération" pour afficher les résultats.</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+  <script>
+  const FB_DELIB=[
+    {rank:1,mat:"ITP-2026-0124",name:"M'BOKA Alice",gpa:15.6,credits:56,mention:"Très Bien",status:"Admis"},
+    {rank:2,mat:"ITP-2026-0452",name:"MACKAYA Djepht",gpa:13.0,credits:52,mention:"Assez Bien",status:"Admis"},
+    {rank:3,mat:"ITP-2026-0089",name:"TRAORÉ Moussa",gpa:11.3,credits:48,mention:"Passable",status:"Admis"},
+    {rank:4,mat:"ITP-2026-0201",name:"LOUZOLO Patrick",gpa:8.6,credits:36,mention:"Compensable",status:"Compensé"},
+    {rank:5,mat:"ITP-2026-0310",name:"KIMBEMBE Sarah",gpa:6.2,credits:24,mention:"Insuffisant",status:"Ajourné"},
+  ];
+  const M_C={"Très Bien":"#1565c0","Bien":"#2e7d32","Assez Bien":"#388e3c","Passable":"#f57c00","Compensable":"#ff8f00","Insuffisant":"#c62828"};
+  const S_C={Admis:"badge-success",Compensé:"badge-warning",Ajourné:"badge-danger"};
+  const medals=["🥇","🥈","🥉"];
+  function runDelib(){
+    document.getElementById("delib-table").innerHTML=FB_DELIB.map(d=>`<tr style="${d.status==="Ajourné"?"background:#fff5f5;":""}">
+      <td style="font-size:1.2rem;">${medals[d.rank-1]||d.rank}</td>
+      <td><code class="fs-xs">${d.mat}</code></td>
+      <td><strong>${d.name}</strong></td>
+      <td style="font-weight:bold;color:${d.gpa>=10?"var(--dark-blue)":"var(--red-itp)"};">${d.gpa}/20</td>
+      <td>${d.credits}/60</td>
+      <td style="color:${M_C[d.mention]||"#666"};font-weight:bold;">${d.mention}</td>
+      <td><span class="badge ${S_C[d.status]||""}">${d.status}</span></td>
+      <td><button class="btn-outline" style="padding:4px 10px;font-size:0.78rem;" onclick="changeDecision(${d.rank-1})">Modifier</button></td>
+    </tr>`).join("");
+    showToast("✅ Délibération calculée — 5 étudiants","success");
+    Security.log("deliberation_ran",{program:document.getElementById("delib-prog").value});
+  }
+  function changeDecision(idx){
+    const d=FB_DELIB[idx];
+    Modal.show("Décision jury — "+d.name,
+      `<div class="form-group"><label class="form-label">Décision</label><select id="dec" class="form-control"><option value="Admis">Admis</option><option value="Compensé">Compensé</option><option value="Ajourné">Ajourné</option><option value="Redoublant">Redoublant</option></select></div><div class="form-group"><label class="form-label">Commentaire jury</label><textarea id="dec-c" class="form-control" style="height:80px;"></textarea></div>`,
+      [{label:"Confirmer",cls:"btn-primary",fn:`saveDecision(${idx})`},{label:"Annuler",cls:"btn-outline",fn:"Modal.close()"}]
+    );
+  }
+  function saveDecision(idx){
+    FB_DELIB[idx].status=document.getElementById("dec")?.value;
+    runDelib();Modal.close();showToast("✅ Décision enregistrée.","success");
+    Security.log("jury_decision",{student:FB_DELIB[idx].name,decision:FB_DELIB[idx].status});
+  }
+  function generatePV(){
+    showToast("📄 Génération du PV de délibération...","info",3000);
+    Security.log("pv_generated");
+  }
+  </script>
+</main>
+</div>
+<script src="../assets/js/main.js"></script>
+<script src="../assets/js/config.js"></script>
+<script src="../assets/js/api.js"></script>
+<script src="../assets/js/utils.js"></script>
+<script src="../assets/js/auth-guard.js" data-role="direction,admin"></script>
+<script src="../assets/js/tests.js"></script>
+<script src="../assets/js/components.js"></script>
+<script>if('serviceWorker' in navigator){navigator.serviceWorker.register('../sw.js').catch(()=>{})}</script>
+</body></html>

@@ -1,0 +1,182 @@
+<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Vérification Email — ITP University</title>
+<link rel="stylesheet" href="../assets/css/style.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+<link rel="icon" href="../assets/images/icon-192.png">
+<link rel="manifest" href="../manifest.json"></head><body>
+<a href="#main-content" class="sr-only">Aller au contenu principal</a>
+<main role="main" id="main-content" style="min-height:100vh;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#1D3557 0%,#457b9d 100%);padding:20px;">
+  <div style="background:white;border-radius:16px;padding:50px 40px;max-width:480px;width:100%;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,0.3);">
+
+    <!-- Logo -->
+    <div style="width:70px;height:70px;background:var(--dark-blue);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 20px;">
+      <i class="fas fa-university" style="color:white;font-size:1.8rem;"></i>
+    </div>
+    <h2 style="color:var(--dark-blue);margin:0 0 5px;">ITP University</h2>
+    <p class="text-muted-sm mb-30">Institut Technique Polytechnique — Brazzaville</p>
+
+    <!-- État : en cours -->
+    <div id="state-loading">
+      <div style="width:80px;height:80px;border:6px solid #e3f2fd;border-top-color:var(--dark-blue);border-radius:50%;animation:spin 1s linear infinite;margin:0 auto 20px;"></div>
+      <h3 style="color:var(--dark-blue);">Vérification en cours...</h3>
+      <p class="text-muted-sm">Validation de votre adresse email.</p>
+    </div>
+
+    <!-- État : succès -->
+    <div id="state-success" class="d-none">
+      <div style="width:80px;height:80px;background:#e8f5e9;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 20px;">
+        <i class="fas fa-check-circle" style="font-size:2.5rem;color:#2e7d32;"></i>
+      </div>
+      <h3 style="color:#2e7d32;">Email vérifié !</h3>
+      <p class="text-muted-sm mb-20">Votre adresse email a été confirmée avec succès. Votre compte est maintenant actif.</p>
+      <div id="user-info" style="background:#f8f9fa;border-radius:8px;padding:15px;margin-bottom:20px;text-align:left;display:none;">
+        <p class="m-0"><strong>Nom :</strong> <span id="verified-name"></span></p>
+        <p class="m-0"><strong>Rôle :</strong> <span id="verified-role"></span></p>
+      </div>
+      <a href="login.html" class="btn-primary" style="width:100%;display:block;padding:14px;font-size:1rem;border-radius:8px;text-decoration:none;">
+        <i class="fas fa-sign-in-alt"></i> Se connecter
+      </a>
+    </div>
+
+    <!-- État : déjà vérifié -->
+    <div id="state-already" class="d-none">
+      <div style="width:80px;height:80px;background:#e3f2fd;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 20px;">
+        <i class="fas fa-info-circle" style="font-size:2.5rem;color:#1565c0;"></i>
+      </div>
+      <h3 style="color:#1565c0;">Déjà vérifié</h3>
+      <p class="text-muted-sm mb-20">Cette adresse email a déjà été confirmée. Vous pouvez vous connecter directement.</p>
+      <a href="login.html" class="btn-primary" style="width:100%;display:block;padding:14px;font-size:1rem;border-radius:8px;text-decoration:none;">
+        <i class="fas fa-sign-in-alt"></i> Se connecter
+      </a>
+    </div>
+
+    <!-- État : erreur token -->
+    <div id="state-error" class="d-none">
+      <div style="width:80px;height:80px;background:#ffebee;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 20px;">
+        <i class="fas fa-times-circle" style="font-size:2.5rem;color:var(--red-itp);"></i>
+      </div>
+      <h3 style="color:var(--red-itp);">Lien invalide</h3>
+      <p class="text-muted-sm mb-20" id="error-message">Ce lien de vérification est invalide ou a expiré (validité : 24h).</p>
+      <button onclick="resendVerification()" class="btn-primary" style="width:100%;padding:14px;font-size:1rem;border-radius:8px;margin-bottom:10px;">
+        <i class="fas fa-redo"></i> Renvoyer l'email
+      </button>
+      <a href="login.html" class="btn-outline" style="width:100%;display:block;padding:12px;font-size:0.95rem;border-radius:8px;text-decoration:none;text-align:center;margin-top:8px;">
+        Retour à la connexion
+      </a>
+    </div>
+
+    <!-- État : pas de token -->
+    <div id="state-notoken" class="d-none">
+      <div style="width:80px;height:80px;background:#fff3e0;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 20px;">
+        <i class="fas fa-envelope" style="font-size:2.5rem;color:#f57c00;"></i>
+      </div>
+      <h3 style="color:#f57c00;">Vérifiez votre email</h3>
+      <p class="text-muted-sm mb-10">Un email de confirmation a été envoyé à votre adresse lors de l'inscription.</p>
+      <p class="text-muted-sm mb-20">Cliquez sur le lien dans cet email pour activer votre compte.</p>
+      <div style="background:#f8f9fa;border-radius:8px;padding:15px;margin-bottom:20px;font-size:0.85rem;text-align:left;">
+        <p class="m-0 fw-bold mb-5">Vous n'avez pas reçu l'email ?</p>
+        <ul style="margin:0;padding-left:18px;color:#666;">
+          <li>Vérifiez vos spams / courriers indésirables</li>
+          <li>Attendez quelques minutes</li>
+          <li>Vérifiez l'adresse email saisie</li>
+        </ul>
+      </div>
+      <div class="d-flex gap-10">
+        <button onclick="resendVerification()" class="btn-primary" style="flex:1;padding:12px;">
+          <i class="fas fa-redo"></i> Renvoyer
+        </button>
+        <a href="login.html" class="btn-outline" style="flex:1;padding:12px;text-decoration:none;text-align:center;display:flex;align-items:center;justify-content:center;">
+          Connexion
+        </a>
+      </div>
+    </div>
+
+    <p class="text-muted-sm mt-20" style="font-size:0.78rem;">
+      Problème ? <a href="../pages/contact.html" style="color:var(--dark-blue);">Contactez le support ITP</a>
+    </p>
+  </div>
+</main>
+
+<style>
+@keyframes spin { to { transform: rotate(360deg); } }
+:root { --dark-blue:#1D3557; --red-itp:#e63946; --light-grey:#dee2e6; }
+.btn-primary { background:var(--dark-blue);color:white;border:none;cursor:pointer;font-weight:600; }
+.btn-outline  { background:white;color:var(--dark-blue);border:2px solid var(--dark-blue);cursor:pointer;font-weight:600; }
+.d-flex { display:flex; } .gap-10 { gap:10px; } .text-muted-sm { color:#666;font-size:0.88rem; }
+.m-0{margin:0;} .mb-5{margin-bottom:5px;} .mb-10{margin-bottom:10px;} .mb-20{margin-bottom:20px;} .mb-30{margin-bottom:30px;} .mt-20{margin-top:20px;}
+.fw-bold{font-weight:bold;} .sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);}
+</style>
+<script src="../assets/js/config.js"></script>
+<script>
+(async function() {
+  const params  = new URLSearchParams(location.search);
+  const token   = params.get('token');
+  const email   = params.get('email');
+
+  function show(id) {
+    ['state-loading','state-success','state-already','state-error','state-notoken'].forEach(s => {
+      document.getElementById(s).style.display = s===id ? 'block' : 'none';
+    });
+  }
+
+  // Pas de token dans l'URL
+  if (!token) { show('state-notoken'); return; }
+
+  // Appel API vérification
+  try {
+    const res = await fetch(`${ITP_CONFIG.apiBase()}/auth/verify-email`, {
+      method: 'POST',
+      headers: { 'Content-Type':'application/json' },
+      body: JSON.stringify({ token, email })
+    });
+    const data = await res.json();
+
+    if (res.ok && data.verified) {
+      if (data.already_verified) { show('state-already'); return; }
+      show('state-success');
+      if (data.user) {
+        document.getElementById('verified-name').textContent = data.user.name || '—';
+        document.getElementById('verified-role').textContent = data.user.role || '—';
+        document.getElementById('user-info').style.display = 'block';
+      }
+      // Si le token est valide, connecter automatiquement
+      if (data.token) {
+        localStorage.setItem('itp_token', data.token);
+        localStorage.setItem('itp_user',  JSON.stringify(data.user));
+        localStorage.setItem('itp_login_time', Date.now());
+      }
+    } else if (res.status === 410) {
+      document.getElementById('error-message').textContent = 'Ce lien a expiré (validité 24h). Demandez un nouveau lien.';
+      show('state-error');
+    } else if (res.status === 404) {
+      document.getElementById('error-message').textContent = 'Token invalide ou déjà utilisé.';
+      show('state-error');
+    } else {
+      show('state-error');
+    }
+  } catch {
+    // Mode démo — simuler la vérification
+    await new Promise(r => setTimeout(r, 1500));
+    if (token.length >= 6) {
+      show('state-success');
+    } else {
+      show('state-error');
+    }
+  }
+})();
+
+async function resendVerification() {
+  const email = new URLSearchParams(location.search).get('email')
+    || prompt('Entrez votre adresse email :');
+  if (!email) return;
+  try {
+    await fetch(`${ITP_CONFIG.apiBase()}/auth/resend-verification`, {
+      method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ email })
+    });
+  } catch {}
+  alert(`Un nouvel email de vérification a été envoyé à ${email}. Vérifiez vos spams.`);
+}
+</script>
+<script>if('serviceWorker' in navigator){navigator.serviceWorker.register('../sw.js').catch(()=>{})}</script>
+<script src="../assets/js/tests.js"></script>
+</body></html>

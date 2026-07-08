@@ -1,0 +1,270 @@
+<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Scanner QR Code — ITP University</title>
+<link rel="stylesheet" href="../assets/css/style.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+<link rel="manifest" href="../manifest.json">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jsQR/1.4.0/jsQR.min.js"></script>
+</head><body>
+<a href="#main-content" class="sr-only">Aller au contenu principal</a>
+<div id="itp-header"></div>
+<main role="main" id="main-content" style="padding:40px;max-width:700px;margin:0 auto;">
+  <h2 class="text-center mb-10">📷 Scanner QR Code</h2>
+  <p class="text-center text-muted-sm mb-30">Scannez la carte étudiante ou le QR code pour identifier un étudiant</p>
+
+  <div id="tabs-scanner">
+    <div class="tabs">
+      <button class="tab active" data-tab="tab-camera">Caméra</button>
+      <button class="tab" data-tab="tab-upload">Importer image</button>
+      <button class="tab" data-tab="tab-manual">Saisie manuelle</button>
+    </div>
+
+    <!-- Caméra -->
+    <div class="tab-panel active" id="tab-camera">
+      <div class="card text-center">
+        <div id="camera-container" style="position:relative;background:#000;border-radius:8px;overflow:hidden;max-width:400px;margin:0 auto;">
+          <video id="qr-video" style="width:100%;display:block;" playsinline autoplay></video>
+          <canvas id="qr-canvas" class="d-none"></canvas>
+          <div id="scan-overlay" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:200px;height:200px;border:3px solid #00ff00;border-radius:8px;box-shadow:0 0 0 9999px rgba(0,0,0,0.4);"></div>
+          <div id="scan-line" style="position:absolute;top:50%;left:calc(50% - 97px);width:194px;height:3px;background:linear-gradient(to right,transparent,#00ff00,transparent);animation:scanline 2s linear infinite;"></div>
+        </div>
+        <div class="mt-15 d-flex gap-10 justify-center">
+          <button id="btn-start"  class="btn-primary"  onclick="startCamera()"><i class="fas fa-camera"></i> Démarrer</button>
+          <button id="btn-stop"   class="btn-outline"   onclick="stopCamera()"  class="d-none"><i class="fas fa-stop"></i> Arrêter</button>
+          <button id="btn-torch"  class="btn-outline"   onclick="toggleTorch()" class="d-none"><i class="fas fa-bolt"></i> Lampe</button>
+        </div>
+        <div id="camera-error" class="d-none" class="mt-10">
+          <p style="color:var(--red-itp);font-size:0.88rem;"><i class="fas fa-exclamation-triangle"></i> Caméra non disponible sur ce navigateur. Utilisez l'import d'image.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Import image -->
+    <div class="tab-panel" id="tab-upload">
+      <div class="card text-center">
+        <div id="upload-zone" style="border:2px dashed #ccc;border-radius:8px;padding:40px;cursor:pointer;transition:border-color 0.2s;"
+          onclick="document.getElementById('qr-file').click()"
+          ondragover="event.preventDefault();this.style.borderColor='var(--dark-blue)'"
+          ondragleave="this.style.borderColor='#ccc'"
+          ondrop="handleFileDrop(event)">
+          <i class="fas fa-qrcode" style="font-size:3rem;color:#ccc;margin-bottom:15px;display:block;"></i>
+          <p class="m-0 fw-bold">Glissez une image ou cliquez pour sélectionner</p>
+          <p class="text-muted-sm mb-0">PNG, JPG, WEBP acceptés</p>
+        </div>
+        <input type="file" id="qr-file" accept="image/*" class="d-none" onchange="readQRFromFile(event)">
+        <canvas id="upload-canvas" class="d-none"></canvas>
+        <img id="preview-img" style="display:none;max-width:300px;margin:15px auto;border-radius:8px;" alt="Aperçu QR code">
+      </div>
+    </div>
+
+    <!-- Saisie manuelle -->
+    <div class="tab-panel" id="tab-manual">
+      <div class="card">
+        <div class="form-group">
+          <label class="form-label">Matricule étudiant</label>
+          <div class="d-flex gap-10">
+            <input type="text" id="manual-input" class="form-control" placeholder="ITP-2026-XXXX" style="flex:1;" aria-label="Matricule étudiant">
+            <button class="btn-primary" onclick="lookupManual()"><i class="fas fa-search"></i> Rechercher</button>
+          </div>
+        </div>
+        <p class="text-muted-sm">Entrez le matricule imprimé sur la carte ou le relevé.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Résultat du scan -->
+  <div id="scan-result" class="d-none" class="card mt-20">
+    <div class="d-flex align-center gap-15 mb-15">
+      <div id="result-avatar" style="width:60px;height:60px;border-radius:50%;background:var(--dark-blue);display:flex;align-items:center;justify-content:center;color:white;font-size:1.4rem;font-weight:bold;flex-shrink:0;"></div>
+      <div>
+        <h3 class="m-0" id="result-name"></h3>
+        <p class="text-muted-sm m-0" id="result-matricule"></p>
+        <p class="text-muted-sm m-0" id="result-program"></p>
+      </div>
+      <div id="result-status-badge" style="margin-left:auto;"></div>
+    </div>
+    <div class="grid-2">
+      <div><p class="text-muted-sm m-0">Statut académique</p><strong id="result-status"></strong></div>
+      <div><p class="text-muted-sm m-0">Campus</p><strong id="result-campus"></strong></div>
+      <div><p class="text-muted-sm m-0">Paiements</p><strong id="result-payment"></strong></div>
+      <div><p class="text-muted-sm m-0">Présences</p><strong id="result-presence"></strong></div>
+    </div>
+    <div class="d-flex gap-10 mt-15 flex-wrap">
+      <a id="result-profile-link" href="#" class="btn-primary" style="font-size:0.85rem;"><i class="fas fa-user"></i> Voir le dossier</a>
+      <button class="btn-outline" style="font-size:0.85rem;" onclick="resetScan()"><i class="fas fa-qrcode"></i> Scanner un autre</button>
+    </div>
+  </div>
+
+  <!-- Historique des scans -->
+  <div class="card mt-20">
+    <div class="d-flex justify-between align-center mb-15">
+      <h4 class="m-0">Historique des scans</h4>
+      <button class="btn-outline" style="padding:4px 10px;font-size:0.8rem;" onclick="clearHistory()"><i class="fas fa-trash"></i></button>
+    </div>
+    <div id="scan-history" class="text-muted-sm">Aucun scan récent.</div>
+  </div>
+</main>
+<div id="itp-footer"></div>
+<style>
+@keyframes scanline { 0%{top:calc(50% - 97px)} 50%{top:calc(50% + 94px)} 100%{top:calc(50% - 97px)} }
+</style>
+<script src="../assets/js/main.js"></script>
+<script src="../assets/js/config.js"></script>
+<script src="../assets/js/api.js"></script>
+<script src="../assets/js/utils.js"></script>
+<script src="../assets/js/tests.js"></script>
+<script src="../assets/js/components.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded',()=>initTabs('tabs-scanner'));
+
+let stream=null, scanning=false, torchOn=false, scanHistory=JSON.parse(localStorage.getItem('itp_scan_history')||'[]');
+
+// Données de démo pour identifier par QR
+const FB_STUDENTS_QR={
+  'ITP-2026-0452':{ name:'Djepht MACKAYA',    program:'L3 Génie Logiciel',  campus:'Brazzaville', status:'En règle',       payment:'À jour',       presence:'87%' },
+  'ITP-2026-0124':{ name:"Alice M'BOKA",      program:'L3 Génie Logiciel',  campus:'Brazzaville', status:'En règle',       payment:'À jour',       presence:'92%' },
+  'ITP-2026-0089':{ name:'Moussa TRAORÉ',     program:'L2 Réseaux',         campus:'Brazzaville', status:'En règle',       payment:'Incomplet',    presence:'79%' },
+  'ITP-2026-0201':{ name:'Patrick LOUZOLO',   program:'L3 Génie Logiciel',  campus:'Brazzaville', status:'⚠️ Dette active',payment:'⚠️ Incomplet','presence':'65%' },
+};
+
+async function startCamera() {
+  try {
+    stream = await navigator.mediaDevices.getUserMedia({ video:{ facingMode:'environment' } });
+    const video=document.getElementById('qr-video');
+    video.srcObject=stream;
+    document.getElementById('btn-start').style.display='none';
+    document.getElementById('btn-stop').style.display='inline-flex';
+    document.getElementById('btn-torch').style.display='inline-flex';
+    scanning=true;
+    requestAnimationFrame(scanFrame);
+  } catch(e) {
+    document.getElementById('camera-error').style.display='block';
+  }
+}
+
+function scanFrame() {
+  if (!scanning) return;
+  const video=document.getElementById('qr-video');
+  const canvas=document.getElementById('qr-canvas');
+  if (video.readyState===video.HAVE_ENOUGH_DATA) {
+    canvas.width=video.videoWidth; canvas.height=video.videoHeight;
+    const ctx=canvas.getContext('2d');
+    ctx.drawImage(video,0,0);
+    const imageData=ctx.getImageData(0,0,canvas.width,canvas.height);
+    const code=typeof jsQR!=='undefined' ? jsQR(imageData.data,imageData.width,imageData.height) : null;
+    if (code) { stopCamera(); processQR(code.data); return; }
+  }
+  requestAnimationFrame(scanFrame);
+}
+
+function stopCamera() {
+  scanning=false;
+  if (stream) { stream.getTracks().forEach(t=>t.stop()); stream=null; }
+  document.getElementById('btn-start').style.display='inline-flex';
+  document.getElementById('btn-stop').style.display='none';
+  document.getElementById('btn-torch').style.display='none';
+}
+
+function toggleTorch() {
+  if (!stream) return;
+  const track=stream.getVideoTracks()[0];
+  torchOn=!torchOn;
+  track.applyConstraints({ advanced:[{ torch:torchOn }] }).catch(()=>{});
+}
+
+function readQRFromFile(event) {
+  const file=event.target.files[0]; if (!file) return;
+  const reader=new FileReader();
+  reader.onload=e=>{
+    const img=new Image();
+    img.onload=()=>{
+      document.getElementById('preview-img').src=e.target.result;
+      document.getElementById('preview-img').style.display='block';
+      const canvas=document.getElementById('upload-canvas');
+      canvas.width=img.width; canvas.height=img.height;
+      const ctx=canvas.getContext('2d');
+      ctx.drawImage(img,0,0);
+      const imageData=ctx.getImageData(0,0,canvas.width,canvas.height);
+      const code=typeof jsQR!=='undefined' ? jsQR(imageData.data,imageData.width,imageData.height) : null;
+      if (code) processQR(code.data);
+      else showToast('QR Code non détecté dans cette image.','warning');
+    };
+    img.src=e.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+function handleFileDrop(e) {
+  e.preventDefault();
+  document.getElementById('upload-zone').style.borderColor='#ccc';
+  const file=e.dataTransfer.files[0];
+  if (file) { document.getElementById('qr-file').files=e.dataTransfer.files; readQRFromFile({target:{files:[file]}}); }
+}
+
+function lookupManual() {
+  const val=document.getElementById('manual-input').value.trim().toUpperCase();
+  if (!val) { showToast('Entrez un matricule.','warning'); return; }
+  processQR('ITP-'+val.replace(/^ITP-/,''));
+}
+
+async function processQR(data) {
+  // Extraire le matricule du QR (format : ITP-XXXX-XXXX ou URL contenant le matricule)
+  const match=data.match(/ITP-\d{4}-\d{4}/);
+  const matricule=match?match[0]:data.split('-').length>=2?data:null;
+  if (!matricule) { showToast('QR Code invalide ou non reconnu.','error'); return; }
+
+  let student=FB_STUDENTS_QR[matricule];
+  // Tenter l'API
+  try {
+    const r=await ITP_API.students.search({q:matricule});
+    if (r?.results?.[0]) student={
+      name:r.results[0].first_name+' '+r.results[0].last_name,
+      program:r.results[0].program||'—',
+      campus:r.results[0].campus||'—',
+      status:'En règle', payment:'À jour', presence:'—'
+    };
+  } catch {}
+
+  if (!student) { showToast(`Étudiant "${matricule}" introuvable.`,'error'); return; }
+
+  // Afficher le résultat
+  document.getElementById('scan-result').style.display='block';
+  document.getElementById('result-avatar').textContent=student.name[0].toUpperCase();
+  document.getElementById('result-name').textContent=student.name;
+  document.getElementById('result-matricule').textContent=matricule;
+  document.getElementById('result-program').textContent=student.program;
+  document.getElementById('result-status').textContent=student.status;
+  document.getElementById('result-campus').textContent=student.campus;
+  document.getElementById('result-payment').textContent=student.payment;
+  document.getElementById('result-presence').textContent=student.presence;
+  document.getElementById('result-status-badge').innerHTML=student.status.includes('Dette')
+    ? '<span class="badge badge-danger">⚠️ Alerte</span>'
+    : '<span class="badge badge-success">✓ Valide</span>';
+  document.getElementById('result-profile-link').href='../student/index.html';
+  document.getElementById('scan-result').scrollIntoView({behavior:'smooth'});
+
+  // Sauvegarder dans l'historique
+  scanHistory.unshift({ matricule, name:student.name, ts:new Date().toLocaleString('fr-FR') });
+  if (scanHistory.length>10) scanHistory.pop();
+  localStorage.setItem('itp_scan_history',JSON.stringify(scanHistory));
+  renderHistory();
+  Security.log('qr_scanned',{matricule,name:student.name});
+  showToast(`✅ Étudiant identifié : ${student.name}`,'success');
+}
+
+function renderHistory() {
+  const el=document.getElementById('scan-history');
+  el.innerHTML=scanHistory.length
+    ? scanHistory.map(s=>`<div class="d-flex justify-between align-center" style="padding:6px 0;border-bottom:1px solid #eee;">
+        <span><strong>${s.matricule}</strong> — ${s.name}</span>
+        <span class="text-muted-sm">${s.ts}</span>
+      </div>`).join('')
+    : '<p class="text-muted-sm m-0">Aucun scan récent.</p>';
+}
+
+function clearHistory() { scanHistory=[]; localStorage.removeItem('itp_scan_history'); renderHistory(); }
+function resetScan() { document.getElementById('scan-result').style.display='none'; document.getElementById('manual-input').value=''; }
+
+renderHistory();
+</script>
+<script>if('serviceWorker' in navigator){navigator.serviceWorker.register('../sw.js').catch(()=>{})}</script>
+</body></html>

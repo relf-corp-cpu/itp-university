@@ -1,0 +1,269 @@
+<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Paramètres — ITP University</title>
+<link rel="stylesheet" href="../assets/css/style.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+<link rel="icon" href="../assets/images/icon-192.png">
+<link rel="manifest" href="../manifest.json"></head><body>
+<a href="#main-content" class="sr-only">Aller au contenu principal</a>
+<div class="dashboard-layout">
+<aside class="sidebar" role="complementary" aria-label="Menu administrateur">
+  <h3>Administration</h3>
+      <nav role="navigation" aria-label="Navigation principale" style="display:flex;flex-direction:column;gap:10px;margin-top:20px;">
+    <a href="index.html"        class="nav-link"><i class="fas fa-chart-line"></i> Tableau de bord</a>
+    <a href="analytics.html"    class="nav-link"><i class="fas fa-chart-bar"></i> Analytique</a>
+    <a href="utilisateurs.html" class="nav-link"><i class="fas fa-users"></i> Utilisateurs</a>
+    <a href="academic.html"     class="nav-link"><i class="fas fa-graduation-cap"></i> Structure Académique</a>
+    <a href="logs.html"         class="nav-link"><i class="fas fa-history"></i> Journal</a>
+    <a href="parametres.html"   class="nav-link"><i class="fas fa-cog"></i> Paramètres</a>
+    <a href="permissions.html"  class="nav-link"><i class="fas fa-shield-alt"></i> Permissions</a>
+    <a href="sauvegardes.html"  class="nav-link"><i class="fas fa-database"></i> Sauvegardes</a>
+    <a href="#" onclick="if(confirm('Se déconnecter ?')){localStorage.clear();window.location='../auth/login.html';}" class="nav-link"><i class="fas fa-sign-out-alt"></i> Déconnexion</a>
+  </nav>
+</aside>
+<main class="dashboard-main" id="main-content" role="main">
+  <div class="page-header">
+    <h2 class="page-title">Paramètres du Système</h2>
+    <button class="btn-primary" onclick="saveAllSettings()"><i class="fas fa-save"></i> Tout enregistrer</button>
+  </div>
+
+  <div id="tabs-settings">
+    <div class="tabs">
+      <button class="tab active" data-tab="tab-general">Général</button>
+      <button class="tab" data-tab="tab-academic">Académique</button>
+      <button class="tab" data-tab="tab-financial">Financier</button>
+      <button class="tab" data-tab="tab-notifs">Notifications</button>
+      <button class="tab" data-tab="tab-security">Sécurité</button>
+    </div>
+
+    <!-- Général -->
+    <div class="tab-panel active" id="tab-general">
+      <div class="card">
+        <h3 class="mb-20">Informations de l'établissement</h3>
+        <div class="form-grid-2">
+          <div class="form-group"><label class="form-label">Nom de l'établissement</label>
+            <input id="s-nom" class="form-control" value="Institut Technique Polytechnique (ITP)"></div>
+          <div class="form-group"><label class="form-label">Ville</label>
+            <input id="s-ville" class="form-control" value="Brazzaville"></div>
+          <div class="form-group"><label class="form-label">Pays</label>
+            <input id="s-pays" class="form-control" value="République du Congo"></div>
+          <div class="form-group"><label class="form-label">Téléphone</label>
+            <input id="s-tel" class="form-control" value="+242 06 434 69 89"></div>
+          <div class="form-group"><label class="form-label">Email contact</label>
+            <input type="email" id="s-email" class="form-control" value="contact@itp-university.cg"></div>
+          <div class="form-group"><label class="form-label">Site web</label>
+            <input id="s-web" class="form-control" value="https://itp-university.cg"></div>
+        </div>
+        <div class="form-group"><label class="form-label">Adresse complète</label>
+          <input id="s-adresse" class="form-control" value="19, rue 5 février 1978, Poto-Poto, Brazzaville"></div>
+        <div class="form-group"><label class="form-label">Fuseau horaire</label>
+          <select id="s-tz" class="form-control">
+            <option selected>Africa/Brazzaville</option>
+            <option>Africa/Kinshasa</option>
+            <option>UTC</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <!-- Académique -->
+    <div class="tab-panel" id="tab-academic">
+      <div class="card">
+        <h3 class="mb-20">Paramètres académiques</h3>
+        <div class="form-grid-2">
+          <div class="form-group"><label class="form-label">Année académique en cours</label>
+            <input id="s-annee" class="form-control" value="2025-2026"></div>
+          <div class="form-group"><label class="form-label">Monnaie</label>
+            <select id="s-monnaie" class="form-control"><option selected>FCFA</option><option>XAF</option><option>USD</option></select></div>
+          <div class="form-group"><label class="form-label">Durée d'emprunt (jours)</label>
+            <input type="number" id="s-loan" class="form-control" value="14" min="1" max="90"></div>
+          <div class="form-group"><label class="form-label">Amende par jour de retard (FCFA)</label>
+            <input type="number" id="s-fine" class="form-control" value="500" min="0"></div>
+        </div>
+        <h4 class="mt-20 mb-15">Formule de calcul des notes</h4>
+        <div class="form-grid-2">
+          <div class="form-group"><label class="form-label">Coefficient DST (%)</label>
+            <input type="number" id="s-dst-coef" class="form-control" value="30" min="0" max="100" oninput="updateCoefTotal()"></div>
+          <div class="form-group"><label class="form-label">Coefficient TP (%)</label>
+            <input type="number" id="s-tp-coef" class="form-control" value="20" min="0" max="100" oninput="updateCoefTotal()"></div>
+          <div class="form-group"><label class="form-label">Coefficient Session (%)</label>
+            <input type="number" id="s-sess-coef" class="form-control" value="50" min="0" max="100" oninput="updateCoefTotal()"></div>
+          <div class="form-group"><label class="form-label">Total (doit = 100%)</label>
+            <input id="s-total-coef" class="form-control" value="100%" readonly style="background:#e8f5e9;color:#2e7d32;font-weight:bold;"></div>
+        </div>
+        <div style="padding:12px;background:#e3f2fd;border-radius:6px;margin-top:10px;font-size:0.9rem;">
+          <i class="fas fa-info-circle" style="color:#1565c0;"></i>
+          <strong>Formule actuelle :</strong> Moy = DST×30% + TP×20% + Session×50% (avec TP) ou DST×30% + Session×70% (sans TP)
+        </div>
+        <div class="form-group mt-20"><label class="form-label">Note de passage</label>
+          <div class="d-flex align-center gap-10">
+            <input type="number" id="s-pass" class="form-control" value="10" min="0" max="20" style="width:100px;">
+            <span class="text-muted-sm">/20 — En dessous : Ajourné</span>
+          </div>
+        </div>
+        <div class="form-group"><label class="form-label">Note de compensation</label>
+          <div class="d-flex align-center gap-10">
+            <input type="number" id="s-comp" class="form-control" value="8" min="0" max="20" style="width:100px;">
+            <span class="text-muted-sm">/20 — Compensable si moyenne générale ≥ 10</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Financier -->
+    <div class="tab-panel" id="tab-financial">
+      <div class="card">
+        <h3 class="mb-20">Frais académiques (FCFA)</h3>
+        <div class="form-grid-2">
+          <div class="form-group"><label class="form-label">Frais d'inscription</label>
+            <input type="number" id="s-frais-inscription" class="form-control" value="50000"></div>
+          <div class="form-group"><label class="form-label">Scolarité Licence (annuel)</label>
+            <input type="number" id="s-frais-licence" class="form-control" value="450000"></div>
+          <div class="form-group"><label class="form-label">Scolarité Master (annuel)</label>
+            <input type="number" id="s-frais-master" class="form-control" value="650000"></div>
+          <div class="form-group"><label class="form-label">Frais rattrapage</label>
+            <input type="number" id="s-frais-ratt" class="form-control" value="25000"></div>
+        </div>
+        <h4 class="mt-20 mb-15">Mobile Money</h4>
+        <div class="form-grid-2">
+          <div class="form-group"><label class="form-label">Préfixe MTN Congo</label>
+            <input id="s-mtn-prefix" class="form-control" value="+242 06"></div>
+          <div class="form-group"><label class="form-label">Préfixe Airtel Congo</label>
+            <input id="s-airtel-prefix" class="form-control" value="+242 05"></div>
+        </div>
+        <div class="form-group"><label class="form-label">Numéro marchand MTN</label>
+          <input id="s-mtn-merchant" class="form-control" placeholder="Numéro de compte merchant MTN"></div>
+        <div class="form-group"><label class="form-label">Numéro marchand Airtel</label>
+          <input id="s-airtel-merchant" class="form-control" placeholder="Numéro de compte merchant Airtel"></div>
+      </div>
+    </div>
+
+    <!-- Notifications -->
+    <div class="tab-panel" id="tab-notifs">
+      <div class="card">
+        <h3 class="mb-20">Configuration des notifications</h3>
+        <div class="form-group">
+          <label class="form-label">Email expéditeur</label>
+          <input type="email" id="s-mail-from" class="form-control" value="noreply@itp-university.cg">
+        </div>
+        <h4 class="mt-20 mb-15">Activer les notifications</h4>
+        <div style="display:flex;flex-direction:column;gap:12px;">
+          <label style="display:flex;align-items:center;gap:12px;cursor:pointer;">
+            <input type="checkbox" id="n-payment" checked> <span>Confirmation de paiement (email + SMS)</span>
+          </label>
+          <label style="display:flex;align-items:center;gap:12px;cursor:pointer;">
+            <input type="checkbox" id="n-grade" checked> <span>Publication des notes</span>
+          </label>
+          <label style="display:flex;align-items:center;gap:12px;cursor:pointer;">
+            <input type="checkbox" id="n-absence" checked> <span>Absence enregistrée</span>
+          </label>
+          <label style="display:flex;align-items:center;gap:12px;cursor:pointer;">
+            <input type="checkbox" id="n-library"> <span>Rappel de retour bibliothèque</span>
+          </label>
+          <label style="display:flex;align-items:center;gap:12px;cursor:pointer;">
+            <input type="checkbox" id="n-events" checked> <span>Nouveaux événements</span>
+          </label>
+        </div>
+        <div class="form-group mt-20"><label class="form-label">Provider SMS</label>
+          <select id="s-sms-provider" class="form-control">
+            <option>Africa's Talking</option><option>Vonage</option><option>MTN API</option><option>Airtel API</option>
+          </select>
+        </div>
+        <div class="form-group"><label class="form-label">Clé API SMS</label>
+          <input type="password" id="s-sms-key" class="form-control" placeholder="••••••••••••••••" autocomplete="new-password"></div>
+      </div>
+    </div>
+
+    <!-- Sécurité -->
+    <div class="tab-panel" id="tab-security">
+      <div class="card">
+        <h3 class="mb-20">Paramètres de sécurité</h3>
+        <div class="form-grid-2">
+          <div class="form-group"><label class="form-label">Tentatives de connexion max</label>
+            <input type="number" id="s-max-login" class="form-control" value="5" min="1" max="20"></div>
+          <div class="form-group"><label class="form-label">Durée blocage (minutes)</label>
+            <input type="number" id="s-lockout" class="form-control" value="15" min="1" max="1440"></div>
+          <div class="form-group"><label class="form-label">Durée de session (heures)</label>
+            <input type="number" id="s-session" class="form-control" value="8" min="1" max="72"></div>
+          <div class="form-group"><label class="form-label">2FA obligatoire</label>
+            <select id="s-2fa" class="form-control">
+              <option value="none">Désactivé</option>
+              <option value="admin">Admin seulement</option>
+              <option value="all">Tous les utilisateurs</option>
+            </select>
+          </div>
+        </div>
+        <h4 class="mt-20 mb-15">Chiffrement</h4>
+        <div style="padding:12px;background:#e8f5e9;border-radius:6px;font-size:0.9rem;">
+          <i class="fas fa-shield-alt" style="color:#2e7d32;"></i>
+          Les mots de passe sont chiffrés avec <strong>bcrypt (cost=12)</strong>.<br>
+          Les tokens API utilisent <strong>Sanctum / SHA-256</strong>.<br>
+          Les sauvegardes sont chiffrées en <strong>AES-256</strong>.
+        </div>
+        <div class="form-group mt-20"><label class="form-label">IP whitelist (une par ligne)</label>
+          <textarea id="s-whitelist" class="form-control" style="height:80px;resize:vertical;" placeholder="192.168.1.0/24&#10;10.0.0.0/8"></textarea></div>
+        <div class="form-group"><label class="form-label">Log des actions sensibles</label>
+          <select id="s-log-level" class="form-control">
+            <option value="all">Toutes les actions</option>
+            <option value="sensitive">Actions sensibles seulement</option>
+            <option value="error">Erreurs seulement</option>
+          </select>
+        </div>
+      </div>
+    </div>
+  </div>
+</main>
+</div>
+
+<script src="../assets/js/main.js"></script>
+<script src="../assets/js/config.js"></script>
+<script src="../assets/js/api.js"></script>
+<script src="../assets/js/utils.js"></script>
+<script src="../assets/js/auth-guard.js" data-role="admin"></script>
+<script src="../assets/js/tests.js"></script>
+<script src="../assets/js/components.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', () => initTabs('tabs-settings'));
+
+function updateCoefTotal() {
+  const dst  = parseInt(document.getElementById('s-dst-coef')?.value||0);
+  const tp   = parseInt(document.getElementById('s-tp-coef')?.value||0);
+  const sess = parseInt(document.getElementById('s-sess-coef')?.value||0);
+  const total = dst + tp + sess;
+  const el    = document.getElementById('s-total-coef');
+  if (el) {
+    el.value = total + '%';
+    el.style.background = total === 100 ? '#e8f5e9' : '#ffebee';
+    el.style.color      = total === 100 ? '#2e7d32' : '#c62828';
+  }
+}
+
+async function saveAllSettings() {
+  const settings = {
+    universite_nom:       document.getElementById('s-nom')?.value,
+    universite_ville:     document.getElementById('s-ville')?.value,
+    universite_pays:      document.getElementById('s-pays')?.value,
+    universite_telephone: document.getElementById('s-tel')?.value,
+    universite_email:     document.getElementById('s-email')?.value,
+    annee_academique:     document.getElementById('s-annee')?.value,
+    monnaie:              document.getElementById('s-monnaie')?.value,
+    fuseau_horaire:       document.getElementById('s-tz')?.value,
+    frais_inscription:    document.getElementById('s-frais-inscription')?.value,
+    frais_licence:        document.getElementById('s-frais-licence')?.value,
+    frais_master:         document.getElementById('s-frais-master')?.value,
+    note_passage:         document.getElementById('s-pass')?.value,
+    max_login_attempts:   document.getElementById('s-max-login')?.value,
+    session_duration:     document.getElementById('s-session')?.value,
+    loan_duration_days:   document.getElementById('s-loan')?.value,
+    fine_per_day:         document.getElementById('s-fine')?.value,
+  };
+  try {
+    await fetch(`${ITP_CONFIG.apiBase()}/admin/settings`, {
+      method:'PUT', headers: ITP_CONFIG.authHeaders(), body: JSON.stringify(settings)
+    });
+  } catch {}
+  Security.log('settings_saved', { keys: Object.keys(settings) });
+  showToast('✅ Paramètres enregistrés avec succès !', 'success');
+}
+</script>
+<script>if('serviceWorker' in navigator){navigator.serviceWorker.register('../sw.js').catch(()=>{})}</script>
+</body></html>

@@ -1,0 +1,181 @@
+<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Annonces — ITP University</title>
+<link rel="stylesheet" href="../assets/css/style.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+<link rel="icon" href="../assets/images/icon-192.png">
+<link rel="manifest" href="../manifest.json"></head><body>
+<a href="#main-content" class="sr-only">Aller au contenu principal</a>
+<div id="itp-header"></div>
+<main role="main" id="main-content" style="padding:50px;max-width:1000px;margin:0 auto;">
+  <div class="page-header">
+    <h2 class="page-title">📢 Annonces &amp; Communications</h2>
+    <div id="admin-actions" class="d-none">
+      <button class="btn-primary" onclick="openNewAnnounce()"><i class="fas fa-plus"></i> Nouvelle annonce</button>
+    </div>
+  </div>
+
+  <!-- Filtres -->
+  <div class="d-flex gap-8 flex-wrap mb-30">
+    <button class="btn-outline filter-type active" onclick="filterAnnounce('',this)" style="padding:6px 14px;">Toutes</button>
+    <button class="btn-outline filter-type" onclick="filterAnnounce('urgent',this)" style="padding:6px 14px;"><i class="fas fa-exclamation-circle" style="color:var(--red-itp);"></i> Urgentes</button>
+    <button class="btn-outline filter-type" onclick="filterAnnounce('academique',this)" style="padding:6px 14px;">Académique</button>
+    <button class="btn-outline filter-type" onclick="filterAnnounce('administrative',this)" style="padding:6px 14px;">Administrative</button>
+    <button class="btn-outline filter-type" onclick="filterAnnounce('evenement',this)" style="padding:6px 14px;">Événements</button>
+  </div>
+
+  <!-- Annonces épinglées -->
+  <div id="pinned-section" class="mb-30">
+    <h4 class="text-muted-sm mb-10"><i class="fas fa-thumbtack"></i> ÉPINGLÉ</h4>
+    <div class="card" style="border-left:5px solid var(--red-itp);">
+      <div class="d-flex justify-between align-center flex-wrap gap-10">
+        <div>
+          <span class="badge badge-danger">URGENT</span>
+          <h3 class="mb-5 mt-5">Examens de Session 2 — Début le 29 juin 2026</h3>
+          <p class="text-muted-sm m-0"><i class="fas fa-calendar"></i> Publié le 20/06/2026 · Par Direction des Études</p>
+        </div>
+        <span class="badge badge-info">Tous les étudiants</span>
+      </div>
+      <p class="mt-10">Les examens de la Session 2 débutent le 29 juin 2026. Tous les étudiants sont convoqués selon leur emploi du temps. Présence obligatoire avec la carte étudiante et une pièce d'identité.</p>
+      <div class="d-flex gap-10 mt-10">
+        <button class="btn-outline" style="font-size:0.85rem;" onclick="window.open('../pages/calendrier.html')"><i class="fas fa-calendar"></i> Voir le calendrier</button>
+        <button class="btn-outline" style="font-size:0.85rem;" onclick="window.open('../pages/examens.html')"><i class="fas fa-list"></i> Programme des examens</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Liste des annonces -->
+  <div id="announces-list" aria-live="polite"></div>
+
+  <!-- Pagination -->
+  <div class="d-flex justify-between align-center mt-20">
+    <span id="ann-count" class="text-muted-sm"></span>
+    <div class="d-flex gap-8">
+      <button id="ann-prev" class="btn-outline" onclick="changePage(-1)" disabled>← Préc.</button>
+      <button id="ann-next" class="btn-outline" onclick="changePage(1)">Suiv. →</button>
+    </div>
+  </div>
+</main>
+<div id="itp-footer"></div>
+
+<script src="../assets/js/main.js"></script>
+<script src="../assets/js/config.js"></script>
+<script src="../assets/js/api.js"></script>
+<script src="../assets/js/utils.js"></script>
+<script src="../assets/js/tests.js"></script>
+<script src="../assets/js/components.js"></script>
+<script>
+const FB_ANNOUNCES = [
+  { id:1, title:'Résultats des délibérations disponibles', category:'academique', target:'Étudiants L3', date:'2026-06-20', author:'Direction des Études',
+    content:'Les résultats de la session 1 sont disponibles dans votre espace étudiant. Consultez vos notes et votre statut de passage.', urgent:false, pinned:false },
+  { id:2, title:'Réunion de rentrée obligatoire — 1er octobre 2026', category:'administrative', target:'Tous', date:'2026-06-18', author:'Secrétariat ITP',
+    content:'Tous les étudiants inscrits pour l\'année 2026-2027 sont convoqués à la réunion de rentrée le 1er octobre 2026 à 09h00 en Amphi A, Campus Poto-Poto.', urgent:false, pinned:false },
+  { id:3, title:'Inscriptions ouvertes pour l\'année 2026-2027', category:'administrative', target:'Nouveaux étudiants', date:'2026-06-15', author:'Secrétariat ITP',
+    content:'Les pré-inscriptions pour l\'année académique 2026-2027 sont ouvertes du 15 juin au 30 août 2026. Déposez votre dossier en ligne ou au bureau du secrétariat.', urgent:false, pinned:false },
+  { id:4, title:'Hackathon ITP 2026 — Inscriptions ouvertes', category:'evenement', target:'Tous', date:'2026-06-10', author:'Admin ITP',
+    content:'Le Hackathon ITP 2026 se tiendra les 25 et 26 juin. Formez des équipes de 2 à 4 personnes et relevez le défi technologique. Prix : 500 000 FCFA pour la 1re équipe.', urgent:false, pinned:false },
+  { id:5, title:'Maintenance du système — Samedi 4 juillet', category:'administrative', target:'Tous', date:'2026-06-08', author:'Admin Système',
+    content:'Une maintenance planifiée aura lieu le samedi 4 juillet de 02h00 à 06h00. Le portail étudiant sera temporairement indisponible.', urgent:false, pinned:false },
+  { id:6, title:'Bourses disponibles — Dépôt jusqu\'au 30 septembre', category:'academique', target:'Étudiants', date:'2026-06-05', author:'Direction',
+    content:'Les dossiers de candidature pour les bourses ITP 2026-2027 (Excellence, Mérite, Transport) sont à déposer avant le 30 septembre 2026.', urgent:false, pinned:false },
+];
+
+const CAT_STYLES = {
+  urgent:        { bg:'#ffebee', border:'var(--red-itp)',   icon:'fa-exclamation-circle', label:'URGENT' },
+  academique:    { bg:'#e3f2fd', border:'#1565c0',          icon:'fa-graduation-cap',     label:'Académique' },
+  administrative:{ bg:'#f3e5f5', border:'#7b1fa2',          icon:'fa-building',           label:'Administratif' },
+  evenement:     { bg:'#fff3e0', border:'#f57c00',          icon:'fa-calendar-alt',       label:'Événement' },
+};
+
+let allAnnounces = [...FB_ANNOUNCES];
+let filtered     = [...allAnnounces];
+let currentPage  = 1;
+const PER_PAGE   = 3;
+
+function renderAnnounces(list) {
+  document.getElementById('ann-count').textContent = `${list.length} annonce(s)`;
+  const start = (currentPage - 1) * PER_PAGE;
+  const page  = list.slice(start, start + PER_PAGE);
+  document.getElementById('ann-prev').disabled = currentPage === 1;
+  document.getElementById('ann-next').disabled = start + PER_PAGE >= list.length;
+
+  document.getElementById('announces-list').innerHTML = page.map(a => {
+    const cat = CAT_STYLES[a.category] || CAT_STYLES.academique;
+    return `
+    <div class="card mb-20" style="border-left:5px solid ${cat.border};background:${cat.bg};">
+      <div class="d-flex justify-between align-center flex-wrap gap-10 mb-10">
+        <div class="d-flex gap-10 align-center">
+          <i class="fas ${cat.icon}" style="color:${cat.border};font-size:1.2rem;"></i>
+          <span class="badge" style="background:${cat.border};color:white;font-size:0.75rem;">${cat.label}</span>
+          <span class="badge badge-info" style="font-size:0.75rem;">${a.target}</span>
+        </div>
+        <span class="text-muted-sm">${new Date(a.date).toLocaleDateString('fr-FR',{day:'2-digit',month:'long',year:'numeric'})}</span>
+      </div>
+      <h3 class="m-0 mb-8">${Security.sanitize(a.title)}</h3>
+      <p class="text-muted-sm mb-10"><i class="fas fa-user"></i> ${Security.sanitize(a.author)}</p>
+      <p class="m-0">${Security.sanitize(a.content)}</p>
+      <div class="d-flex gap-8 mt-15">
+        <button class="btn-outline" style="font-size:0.82rem;" onclick="shareAnnounce('${Security.sanitize(a.title)}')"><i class="fas fa-share-alt"></i> Partager</button>
+        <button class="btn-outline" style="font-size:0.82rem;" onclick="markRead(${a.id},this)"><i class="fas fa-check"></i> Marquer comme lu</button>
+      </div>
+    </div>`;
+  }).join('') || '<p class="text-muted-sm text-center">Aucune annonce dans cette catégorie.</p>';
+}
+
+function filterAnnounce(cat, btn) {
+  document.querySelectorAll('.filter-type').forEach(b => b.classList.remove('active'));
+  btn?.classList.add('active');
+  filtered     = cat ? allAnnounces.filter(a => a.category === cat) : allAnnounces;
+  currentPage  = 1;
+  renderAnnounces(filtered);
+}
+
+function changePage(dir) { currentPage += dir; renderAnnounces(filtered); }
+function markRead(id, btn) { btn.style.opacity='0.5'; btn.disabled=true; btn.textContent='✓ Lu'; }
+function shareAnnounce(title) {
+  if (navigator.share) { navigator.share({ title:'ITP University', text:title, url:window.location.href }); }
+  else { navigator.clipboard.writeText(window.location.href); showToast('Lien copié !','success'); }
+}
+
+function openNewAnnounce() {
+  Modal.show('Nouvelle annonce',
+    `<div class="form-group"><label class="form-label">Titre</label><input id="a-title" class="form-control" required placeholder="Titre de l'annonce"></div>
+     <div class="form-grid-2">
+       <div class="form-group"><label class="form-label">Catégorie</label>
+         <select id="a-cat" class="form-control"><option value="academique">Académique</option><option value="administrative">Administrative</option><option value="evenement">Événement</option><option value="urgent">Urgent</option></select></div>
+       <div class="form-group"><label class="form-label">Public cible</label>
+         <select id="a-target" class="form-control"><option>Tous</option><option>Étudiants</option><option>Professeurs</option><option>Personnel</option></select></div>
+     </div>
+     <div class="form-group"><label class="form-label">Contenu</label><textarea id="a-content" class="form-control" style="height:100px;resize:vertical;" required placeholder="Texte de l'annonce..."></textarea></div>`,
+    [{ label:'Publier', cls:'btn-primary', fn:'publishAnnounce()' }, { label:'Annuler', cls:'btn-outline', fn:'Modal.close()' }]
+  );
+}
+
+async function publishAnnounce() {
+  const title   = document.getElementById('a-title')?.value?.trim();
+  const content = document.getElementById('a-content')?.value?.trim();
+  const cat     = document.getElementById('a-cat')?.value;
+  const target  = document.getElementById('a-target')?.value;
+  if (!title || !content) { showToast('Titre et contenu obligatoires.','warning'); return; }
+
+  try {
+    await ITP_API.notifications.broadcast?.({ message: title, type: cat });
+  } catch {}
+
+  const user = ITP_API.auth.currentUser();
+  allAnnounces.unshift({ id: Date.now(), title, content, category:cat, target, date: new Date().toISOString().split('T')[0], author: user?.name || 'Admin', pinned:false });
+  filterAnnounce('', null);
+  Modal.close();
+  Security.log('announce_published', { title, category:cat });
+  showToast('✅ Annonce publiée et notifiée à tous les utilisateurs !', 'success');
+}
+
+// Vérifier le rôle pour les actions admin
+const user = ITP_API.auth.currentUser();
+if (user && ['admin','secretary'].includes(user.role)) {
+  document.getElementById('admin-actions').style.display = 'block';
+}
+
+renderAnnounces(filtered);
+</script>
+<script>if('serviceWorker' in navigator){navigator.serviceWorker.register('../sw.js').catch(()=>{})}</script>
+</body></html>

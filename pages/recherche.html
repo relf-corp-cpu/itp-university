@@ -1,0 +1,203 @@
+<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Recherche — ITP University</title>
+<link rel="stylesheet" href="../assets/css/style.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+<link rel="icon" href="../assets/images/icon-192.png">
+<link rel="manifest" href="../manifest.json"><meta name="theme-color" content="#1D3557"></head><body>
+<a href="#main-content" class="sr-only">Aller au contenu principal</a>
+<div id="itp-header"></div>
+<main role="main" id="main-content" style="padding:50px;max-width:900px;margin:0 auto;">
+  <h2 class="text-center mb-40">🔍 Recherche Globale</h2>
+
+  <div style="position:relative;margin-bottom:30px;">
+    <input type="text" id="global-search" class="form-control"
+      placeholder="Chercher un étudiant, un cours, un livre, un événement..."
+      style="padding:18px 20px 18px 55px;font-size:1.1rem;border-radius:10px;border:2px solid var(--dark-blue);"
+      oninput="debounceSearch()" aria-label="Recherche globale" autofocus>
+    <i class="fas fa-search" style="position:absolute;left:18px;top:50%;transform:translateY(-50%);color:var(--dark-blue);font-size:1.2rem;"></i>
+    <button onclick="clearSearch()" style="position:absolute;right:15px;top:50%;transform:translateY(-50%);background:none;border:none;color:#999;font-size:1.1rem;cursor:pointer;" aria-label="Effacer">✕</button>
+  </div>
+
+  <!-- Filtres rapides -->
+  <div class="d-flex gap-8 flex-wrap mb-30">
+    <button class="btn-outline filter-type active" onclick="setType('all',this)" style="padding:6px 14px;font-size:0.85rem;">Tout</button>
+    <button class="btn-outline filter-type" onclick="setType('students',this)" style="padding:6px 14px;font-size:0.85rem;"><i class="fas fa-user-graduate"></i> Étudiants</button>
+    <button class="btn-outline filter-type" onclick="setType('courses',this)" style="padding:6px 14px;font-size:0.85rem;"><i class="fas fa-book-open"></i> Cours</button>
+    <button class="btn-outline filter-type" onclick="setType('books',this)" style="padding:6px 14px;font-size:0.85rem;"><i class="fas fa-book"></i> Bibliothèque</button>
+    <button class="btn-outline filter-type" onclick="setType('events',this)" style="padding:6px 14px;font-size:0.85rem;"><i class="fas fa-calendar"></i> Événements</button>
+  </div>
+
+  <!-- Résultats -->
+  <div id="search-results">
+    <div class="text-center" style="padding:60px;color:#ccc;">
+      <i class="fas fa-search" style="font-size:4rem;display:block;margin-bottom:15px;"></i>
+      <p style="font-size:1rem;">Saisissez au moins 2 caractères pour lancer la recherche.</p>
+    </div>
+  </div>
+
+  <!-- Historique de recherche -->
+  <div id="search-history" class="mt-30">
+    <h4 class="text-muted-sm mb-10">Recherches récentes</h4>
+    <div id="history-chips" class="d-flex gap-8 flex-wrap"></div>
+  </div>
+</main>
+<div id="itp-footer"></div>
+<script src="../assets/js/main.js"></script>
+<script src="../assets/js/config.js"></script>
+<script src="../assets/js/api.js"></script>
+<script src="../assets/js/utils.js"></script>
+<script src="../assets/js/tests.js"></script>
+<script src="../assets/js/components.js"></script>
+<script>
+let searchTimeout = null;
+let currentType   = 'all';
+const history     = JSON.parse(localStorage.getItem('itp_search_history') || '[]');
+
+// Données de fallback
+const FB = {
+  students: [
+    { id:1, name:'MACKAYA Djepht',   matricule:'ITP-2026-0452', program:'Génie Logiciel', type:'student' },
+    { id:2, name:"M'BOKA Alice",      matricule:'ITP-2026-0124', program:'Réseaux',         type:'student' },
+    { id:3, name:'TRAORÉ Moussa',     matricule:'ITP-2026-0089', program:'Cybersécurité',   type:'student' },
+    { id:4, name:'LOUZOLO Patrick',   matricule:'ITP-2026-0201', program:'Génie Logiciel',  type:'student' },
+  ],
+  courses: [
+    { id:1, name:'Algorithmique Avancée', professor:'Prof. Moukoko', type:'course' },
+    { id:2, name:'Base de Données SQL',   professor:'Prof. Martin',  type:'course' },
+    { id:3, name:'Réseaux Mobiles',       professor:'Prof. Nguimbi', type:'course' },
+    { id:4, name:'Développement Web',     professor:'Prof. Moukoko', type:'course' },
+  ],
+  books: [
+    { id:1, title:'Algorithmique Fondamentale', author:'Cormen',    available:true,  type:'book' },
+    { id:2, title:'Maîtriser SQL & MySQL',       author:'C.J. Date', available:true,  type:'book' },
+    { id:3, title:'Les Réseaux',                 author:'Tanenbaum', available:false, type:'book' },
+  ],
+  events: [
+    { id:1, title:'Hackathon ITP 2026',    date:'25/06/2026', type:'event' },
+    { id:2, title:'Remise des diplômes',   date:'15/07/2026', type:'event' },
+    { id:3, title:'Conférence Cybersécurité', date:'02/07/2026', type:'event' },
+  ],
+};
+
+function debounceSearch() {
+  clearTimeout(searchTimeout);
+  searchTimeout = setTimeout(runSearch, 350);
+}
+
+async function runSearch() {
+  const q = document.getElementById('global-search').value.trim();
+  if (q.length < 2) {
+    document.getElementById('search-results').innerHTML = `
+      <div class="text-center" style="padding:40px;color:#ccc;">
+        <i class="fas fa-search" style="font-size:3rem;display:block;margin-bottom:10px;"></i>
+        <p>Saisissez au moins 2 caractères.</p>
+      </div>`;
+    return;
+  }
+
+  // Sauvegarder dans l'historique
+  if (!history.includes(q)) {
+    history.unshift(q);
+    if (history.length > 8) history.pop();
+    localStorage.setItem('itp_search_history', JSON.stringify(history));
+    renderHistory();
+  }
+
+  document.getElementById('search-results').innerHTML = `<div class="text-center" style="padding:30px;color:#999;"><i class="fas fa-spinner fa-spin fa-2x"></i></div>`;
+
+  let results = { students:[], courses:[], books:[], events:[] };
+
+  try {
+    const data = await ITP_API.admin?.globalSearch?.({ q }) ?? {};
+    results.students = data.students || [];
+    results.courses  = data.courses  || [];
+  } catch {}
+
+  // Toujours enrichir avec les FB locaux
+  const ql = q.toLowerCase();
+  if (!results.students.length)
+    results.students = FB.students.filter(s => s.name.toLowerCase().includes(ql) || s.matricule.toLowerCase().includes(ql));
+  results.courses = results.courses.length ? results.courses : FB.courses.filter(c => c.name.toLowerCase().includes(ql) || c.professor.toLowerCase().includes(ql));
+  results.books   = FB.books.filter(b => b.title.toLowerCase().includes(ql) || b.author.toLowerCase().includes(ql));
+  results.events  = FB.events.filter(e => e.title.toLowerCase().includes(ql));
+
+  renderResults(results, q);
+}
+
+function renderResults(results, q) {
+  const hl = str => str.replace(new RegExp(`(${q})`, 'gi'), '<mark style="background:#fff3cd;padding:0 2px;">$1</mark>');
+  const total = Object.values(results).reduce((s,a) => s + a.length, 0);
+
+  if (!total) {
+    document.getElementById('search-results').innerHTML = `
+      <div class="text-center" style="padding:40px;color:#999;">
+        <i class="fas fa-search-minus" style="font-size:3rem;display:block;margin-bottom:10px;opacity:0.4;"></i>
+        <p>Aucun résultat pour <strong>"${Security.sanitize(q)}"</strong>.</p>
+      </div>`;
+    return;
+  }
+
+  let html = `<p class="text-muted-sm mb-20">${total} résultat(s) pour "<strong>${Security.sanitize(q)}</strong>"</p>`;
+
+  const sections = [
+    { key:'students', icon:'fa-user-graduate', color:'#1D3557', label:'Étudiants',
+      render: s => `<a href="../student/index.html" style="text-decoration:none;color:inherit;display:block;">
+        <strong>${hl(s.name)}</strong> <span class="text-muted-sm">· ${s.matricule} · ${s.program}</span></a>` },
+    { key:'courses',  icon:'fa-book-open',     color:'#e63946', label:'Cours',
+      render: c => `<span><strong>${hl(c.name)}</strong> <span class="text-muted-sm">· ${c.professor}</span></span>` },
+    { key:'books',    icon:'fa-book',          color:'#2a9d8f', label:'Bibliothèque',
+      render: b => `<a href="bibliotheque.html" style="text-decoration:none;color:inherit;display:block;">
+        <strong>${hl(b.title)}</strong> <span class="text-muted-sm">· ${b.author}</span>
+        <span class="badge ${b.available?'badge-success':'badge-danger'}" style="margin-left:8px;">${b.available?'Disponible':'Emprunté'}</span></a>` },
+    { key:'events',   icon:'fa-calendar-alt',  color:'#e9c46a', label:'Événements',
+      render: e => `<a href="evenements.html" style="text-decoration:none;color:inherit;display:block;">
+        <strong>${hl(e.title)}</strong> <span class="text-muted-sm">· ${e.date}</span></a>` },
+  ];
+
+  sections.forEach(({ key, icon, color, label, render }) => {
+    const items = results[key];
+    if (!items.length || (currentType !== 'all' && currentType !== key.slice(0,-1) && currentType !== key)) return;
+    html += `
+      <div class="card mb-20">
+        <div class="d-flex align-center gap-10 mb-15">
+          <div style="width:36px;height:36px;background:${color};border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+            <i class="fas ${icon}" style="color:white;font-size:0.9rem;"></i>
+          </div>
+          <h4 class="m-0">${label} <span class="text-muted-sm">(${items.length})</span></h4>
+        </div>
+        ${items.map(item => `<div style="padding:10px;border-bottom:1px solid var(--light-grey);">${render(item)}</div>`).join('')}
+      </div>`;
+  });
+
+  document.getElementById('search-results').innerHTML = html;
+}
+
+function setType(type, btn) {
+  currentType = type;
+  document.querySelectorAll('.filter-type').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  const q = document.getElementById('global-search').value.trim();
+  if (q.length >= 2) runSearch();
+}
+
+function clearSearch() {
+  document.getElementById('global-search').value = '';
+  document.getElementById('search-results').innerHTML = `<div class="text-center" style="padding:60px;color:#ccc;"><i class="fas fa-search" style="font-size:4rem;display:block;margin-bottom:15px;"></i><p>Saisissez au moins 2 caractères.</p></div>`;
+}
+
+function renderHistory() {
+  document.getElementById('history-chips').innerHTML = history.slice(0,6).map(h =>
+    `<button onclick="document.getElementById('global-search').value='${h}';runSearch();"
+      style="background:#f0f4ff;border:1px solid #c5d5f5;padding:5px 12px;border-radius:20px;cursor:pointer;font-size:0.82rem;color:var(--dark-blue);">
+      <i class="fas fa-history" style="font-size:0.75rem;"></i> ${Security.sanitize(h)}
+    </button>`
+  ).join('');
+}
+
+renderHistory();
+// Si query en URL
+const urlQ = new URLSearchParams(location.search).get('q');
+if (urlQ) { document.getElementById('global-search').value = urlQ; runSearch(); }
+</script>
+<script>if('serviceWorker' in navigator){navigator.serviceWorker.register('../sw.js').catch(()=>{})}</script>
+</body></html>

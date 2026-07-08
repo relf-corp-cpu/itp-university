@@ -1,0 +1,124 @@
+<!DOCTYPE html><html lang="fr"><head>
+  <link rel="manifest" href="../manifest.json">
+  <meta name="theme-color" content="#1D3557"><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Messagerie — ITP University</title>
+<link rel="stylesheet" href="../assets/css/style.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+<link rel="icon" href="../assets/images/icon-192.png"></head><body>
+<a href="#main-content" class="sr-only" style="position:absolute;left:-999px;" onfocus="this.style.left='10px'">Aller au contenu principal</a>
+
+<div id="itp-header"></div>
+<main id="main-content" style="padding:50px;max-width:1000px;margin:0 auto;">
+  <h2 class="text-center mb-40">Messagerie Interne</h2>
+  <div style="display:flex;height:600px;border:1px solid var(--light-grey);border-radius:10px;overflow:hidden;background:white;">
+    <!-- Conversations -->
+    <div style="width:280px;border-right:1px solid var(--light-grey);display:flex;flex-direction:column;">
+      <div style="padding:15px;border-bottom:1px solid var(--light-grey);">
+        <input type="text" placeholder="Rechercher..." style="width:100%;padding:10px;border-radius:20px;border:1px solid var(--light-grey);box-sizing:border-box;">
+      </div>
+      <div style="flex:1;overflow-y:auto;">
+        <div onclick="openChat('Prof. Moukoko','Bonjour, j\'ai bien reçu votre rapport de stage.')" style="padding:15px;border-bottom:1px solid #eee;background:#e3f2fd;cursor:pointer;">
+          <h4 class="m-0">Prof. Moukoko</h4>
+          <p style="margin:5px 0;font-size:0.8rem;color:#666;">Bonjour, j'ai bien reçu...</p>
+        </div>
+        <div onclick="openChat('Secrétariat ITP','Votre dossier d\'inscription est validé.')" style="padding:15px;border-bottom:1px solid #eee;cursor:pointer;">
+          <h4 class="m-0">Secrétariat ITP</h4>
+          <p style="margin:5px 0;font-size:0.8rem;color:#666;">Votre dossier est validé.</p>
+        </div>
+        <div onclick="openChat('Admin Système','Mise à jour de la plateforme prévue ce soir.')" style="padding:15px;border-bottom:1px solid #eee;cursor:pointer;">
+          <h4 class="m-0">Admin Système</h4>
+          <p style="margin:5px 0;font-size:0.8rem;color:#666;">Mise à jour prévue...</p>
+        </div>
+      </div>
+    </div>
+    <!-- Zone chat -->
+    <div style="flex:1;display:flex;flex-direction:column;">
+      <div id="chat-header" style="padding:15px;background:var(--dark-blue);color:white;display:flex;align-items:center;gap:15px;">
+        <div style="width:40px;height:40px;background:rgba(255,255,255,0.2);border-radius:50%;display:flex;align-items:center;justify-content:center;"><i class="fas fa-user"></i></div>
+        <h4 id="chat-name" class="m-0">Prof. Moukoko</h4>
+      </div>
+      <div id="chat-messages" aria-live="polite" aria-label="Messages du chatbot" style="flex:1;padding:20px;overflow-y:auto;background:#f9f9f9;">
+        <div style="margin-bottom:15px;text-align:left;">
+          <div style="display:inline-block;padding:10px 15px;background:#eee;border-radius:15px;max-width:70%;">Bonjour, j'ai bien reçu votre rapport de stage.</div>
+          <p style="font-size:0.7rem;color:#999;margin:5px 0 0 5px;">10:24</p>
+        </div>
+        <div style="margin-bottom:15px;text-align:right;">
+          <div style="display:inline-block;padding:10px 15px;background:var(--dark-blue);color:white;border-radius:15px;max-width:70%;">Merci Monsieur. Est-ce qu'il manque des documents ?</div>
+          <p style="font-size:0.7rem;color:#999;margin:5px 5px 0 0;">10:26</p>
+        </div>
+      </div>
+      <div style="padding:20px;border-top:1px solid var(--light-grey);display:flex;gap:10px;">
+        <input type="text" id="msg-input" placeholder="Écrivez votre message..." style="flex:1;padding:10px;border:1px solid var(--light-grey);border-radius:5px;" onkeypress="if(event.key==='Enter')sendMsg()">
+        <button class="btn-primary" onclick="sendMsg()">Envoyer</button>
+      </div>
+    </div>
+  </div>
+</main>
+<div id="itp-footer"></div>
+<script src="../assets/js/main.js"></script>
+<script src="../assets/js/config.js"></script>
+<script src="../assets/js/api.js></script><script src="../assets/js/components.js"></script>
+<script>
+function openChat(name, preview) {
+  document.getElementById('chat-name').textContent = name;
+  document.getElementById('chat-messages').innerHTML = `
+    <div style="margin-bottom:15px;text-align:left;">
+      <div style="display:inline-block;padding:10px 15px;background:#eee;border-radius:15px;max-width:70%;">${preview}</div>
+      <p style="font-size:0.7rem;color:#999;margin:5px 0 0 5px;">${new Date().toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'})}</p>
+    </div>`;
+}
+function sendMsg() {
+  const input = document.getElementById('msg-input');
+  if (!input.value.trim()) return;
+  const box = document.getElementById('chat-messages');
+  box.innerHTML += `<div style="margin-bottom:15px;text-align:right;">
+    <div style="display:inline-block;padding:10px 15px;background:var(--dark-blue);color:white;border-radius:15px;max-width:70%;">${input.value}</div>
+    <p style="font-size:0.7rem;color:#999;margin:5px 5px 0 0;">${new Date().toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'})}</p>
+  </div>`;
+  input.value = '';
+  box.scrollTop = box.scrollHeight;
+}
+</script>
+
+<!-- Chatbot flottant -->
+<div id="chatbot-trigger" role="button" aria-label="Ouvrir l'assistant ITP" aria-expanded="false" style="position:fixed;bottom:30px;right:30px;width:60px;height:60px;background:var(--dark-blue);border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 4px 15px rgba(0,0,0,0.3);z-index:1000;">
+  <i class="fas fa-comments" style="color:white;font-size:1.5rem;"></i>
+</div>
+<div id="chatbot-window" role="dialog" aria-label="Assistant ITP" aria-modal="true" style="position:fixed;bottom:30px;right:30px;width:320px;height:420px;background:white;border-radius:15px;box-shadow:0 10px 30px rgba(0,0,0,0.2);display:none;flex-direction:column;z-index:1000;overflow:hidden;">
+  <div style="background:var(--dark-blue);color:white;padding:15px;display:flex;justify-content:space-between;align-items:center;">
+    <div class="d-flex align-center gap-10">
+      <div style="width:35px;height:35px;background:rgba(255,255,255,0.2);border-radius:50%;display:flex;align-items:center;justify-content:center;"><i class="fas fa-robot"></i></div>
+      <div><p style="margin:0;font-weight:bold;">Assistant ITP</p><p style="margin:0;font-size:0.75rem;opacity:0.8;">En ligne</p></div>
+    </div>
+    <button id="chatbot-close" aria-label="Fermer le chatbot" style="background:none;border:none;color:white;font-size:1.2rem;cursor:pointer;">&#x2715;</button>
+  </div>
+  <div id="chat-messages" aria-live="polite" aria-label="Messages du chatbot" style="flex:1;padding:15px;overflow-y:auto;display:flex;flex-direction:column;gap:10px;background:#f9f9f9;">
+    <div class="chat-bubble-bot">Bonjour ! Je suis l'assistant ITP. Comment puis-je vous aider ?</div>
+    <div class="chat-bubble-bot">Posez-moi une question sur les formations, admissions, stages ou frais de scolarité.</div>
+  </div>
+  <div style="padding:10px;border-top:1px solid var(--light-grey);display:flex;gap:8px;">
+    <input id="chat-input" aria-label="Votre message pour l'assistant" type="text" placeholder="Votre question..." style="flex:1;padding:8px 12px;border:1px solid var(--light-grey);border-radius:20px;font-size:0.9rem;">
+    <button id="chat-send" style="width:36px;height:36px;background:var(--dark-blue);border:none;border-radius:50%;cursor:pointer;color:white;"><i class="fas fa-paper-plane" style="font-size:0.8rem;"></i></button>
+  </div>
+</div>
+
+
+<script>
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('../sw.js').catch(() => {});
+}
+</script>
+
+<!-- PWA Banner -->
+<div id="pwa-banner">
+  <div class="d-flex align-center gap-12">
+    <img src="../assets/images/icon-192.png" style="width:36px;height:36px;border-radius:8px;">
+    <div><strong>ITP University</strong><br><small>Installer l'application sur votre appareil</small></div>
+  </div>
+  <div class="d-flex gap-10">
+    <button onclick="installPWA()" style="background:white;color:var(--dark-blue);border:none;padding:8px 16px;border-radius:5px;cursor:pointer;font-weight:bold;">Installer</button>
+    <button onclick="dismissPWA()" style="background:none;border:none;color:rgba(255,255,255,0.7);cursor:pointer;font-size:1.2rem;">&#x2715;</button>
+  </div>
+</div>
+<script src="../assets/js/tests.js"></script>
+</body></html>

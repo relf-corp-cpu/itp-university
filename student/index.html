@@ -1,0 +1,260 @@
+<!DOCTYPE html><html lang="fr"><head>
+  <link rel="manifest" href="../manifest.json">
+  <meta name="theme-color" content="#1D3557"><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Espace Étudiant — ITP University</title>
+<link rel="stylesheet" href="../assets/css/style.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+<link rel="icon" href="../assets/images/icon-192.png"></head><body>
+<a href="#main-content" class="sr-only" style="position:absolute;left:-999px;" onfocus="this.style.left='10px'">Aller au contenu principal</a>
+
+<div class="dashboard-layout">
+<aside role="complementary" aria-label="Menu de navigation" style="width:250px;background-color:var(--dark-blue);color:white;padding:20px;min-height:100vh;flex-shrink:0;">
+  <h3 style="color:white;border-bottom:1px solid rgba(255,255,255,0.1);padding-bottom:10px;">Espace Étudiant</h3>
+  <nav role="navigation" aria-label="Navigation principale" style="display:flex;flex-direction:column;gap:10px;margin-top:20px;">
+    <a href="index.html"           class="nav-link"><i class="fas fa-home"></i> Tableau de bord</a>
+    <a href="notes.html"           class="nav-link"><i class="fas fa-graduation-cap"></i> Mes Notes</a>
+    <a href="emploi_du_temps.html" class="nav-link"><i class="fas fa-calendar-alt"></i> Emploi du temps</a>
+    <a href="paiements.html"       class="nav-link"><i class="fas fa-wallet"></i> Paiements</a>
+    <a href="documents.html"       class="nav-link"><i class="fas fa-file-alt"></i> Mes Documents</a>
+    <a href="carte_numerique.html" class="nav-link"><i class="fas fa-id-card"></i> Carte Numérique</a>
+    <a href="reclamations.html"    class="nav-link"><i class="fas fa-exclamation-circle"></i> Réclamations</a>
+    <a href="profil.html"          class="nav-link"><i class="fas fa-user"></i> Mon Profil</a>
+    <a href="#" onclick="if(confirm('Se déconnecter ?')){localStorage.clear();window.location='../auth/login.html';}" class="nav-link"><i class="fas fa-sign-out-alt"></i> Déconnexion</a>
+  </nav>
+  <div style="margin-top:auto;padding-top:10px;border-top:1px solid rgba(255,255,255,0.1);">
+    <a href="../pages/messagerie.html" class="nav-link"><i class="fas fa-comments"></i> Messagerie</a>
+  </div>
+</aside>
+
+<div style="flex:1;display:flex;flex-direction:column;">
+<div id="itp-header" style="border-bottom:1px solid var(--light-grey);"></div>
+<main role="main" id="main-content" style="flex:1;padding:40px;background:#f8f9fa;">
+
+  <!-- Barre superieure -->
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:30px;flex-wrap:wrap;gap:15px;">
+    <div>
+      <h2 id="greeting" class="m-0">Bonjour, chargement...</h2>
+      <p style="margin:5px 0 0;color:#666;font-size:0.9rem;" id="mode-info"></p>
+    </div>
+    <div class="d-flex align-center gap-15">
+      <div style="position:relative;cursor:pointer;" onclick="toggleNotifs()">
+        <i class="fas fa-bell" style="font-size:20px;color:var(--dark-blue);"></i>
+        <span id="notif-badge" style="display:none;position:absolute;top:-5px;right:-5px;background:var(--red-itp);color:white;border-radius:50%;width:16px;height:16px;font-size:0.65rem;display:flex;align-items:center;justify-content:center;"></span>
+      </div>
+      <img src="https://via.placeholder.com/40" alt="Avatar" id="user-avatar" style="border-radius:50%;cursor:pointer;">
+    </div>
+  </div>
+
+  <!-- Panel notifications -->
+  <div id="notif-panel" style="display:none;position:fixed;top:80px;right:30px;width:320px;background:white;border-radius:10px;box-shadow:0 5px 20px rgba(0,0,0,0.15);z-index:500;overflow:hidden;">
+    <div style="padding:15px;background:var(--dark-blue);color:white;display:flex;justify-content:space-between;">
+      <strong>Notifications</strong>
+      <span class="cursor-pointer" onclick="toggleNotifs()">✕</span>
+    </div>
+    <div id="notif-list" style="max-height:300px;overflow-y:auto;padding:10px;">
+      <p style="color:#666;text-align:center;padding:20px;">Chargement...</p>
+    </div>
+  </div>
+
+  <!-- Stats rapides -->
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:20px;margin-bottom:40px;">
+    <div class="card" style="border-left:4px solid #007bff;">
+      <p class="text-muted-sm m-0">Moyenne Générale</p>
+      <h3 id="stat-moyenne" style="font-size:1.8rem;margin:5px 0;">—</h3>
+    </div>
+    <div class="card" style="border-left:4px solid #28a745;">
+      <p class="text-muted-sm m-0">Crédits ECTS</p>
+      <h3 id="stat-credits" style="font-size:1.8rem;margin:5px 0;">—</h3>
+    </div>
+    <div class="card" style="border-left:4px solid #ffc107;">
+      <p class="text-muted-sm m-0">Absences</p>
+      <h3 id="stat-absences" style="font-size:1.8rem;margin:5px 0;color:orange;">—</h3>
+    </div>
+    <div class="card" style="border-left:4px solid #28a745;">
+      <p class="text-muted-sm m-0">Statut Paiement</p>
+      <h3 id="stat-paiement" style="font-size:1.2rem;margin:5px 0;color:green;">—</h3>
+    </div>
+  </div>
+
+  <!-- Grille principale -->
+  <div style="display:grid;grid-template-columns:2fr 1fr;gap:30px;" id="notes">
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:15px;">
+        <h3 class="m-0">Dernières Notes</h3>
+        <span id="notes-loader" class="text-muted-sm"><i class="fas fa-spinner fa-spin"></i> chargement</span>
+      </div>
+      <table role="table" style="width:100%;border-collapse:collapse;">
+        <thead><tr style="border-bottom:2px solid var(--light-grey);text-align:left;">
+          <th style="padding:10px;">Matière</th>
+          <th style="padding:10px;">DST (30%)</th>
+          <th style="padding:10px;">Session (70%)</th>
+          <th style="padding:10px;">Moyenne</th>
+          <th style="padding:10px;">Statut</th>
+        </tr></thead>
+        <tbody id="notes-table">
+          <tr><td colspan="5" style="padding:20px;text-align:center;color:#999;">Chargement des notes...</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div>
+      <div class="card" class="mb-20" id="edt">
+        <h3>Prochain Cours</h3>
+        <div id="next-course" style="margin-top:15px;padding:15px;background:#eef2f7;border-left:4px solid var(--dark-blue);">
+          <p style="margin:0;color:#999;">Chargement...</p>
+        </div>
+      </div>
+      <div class="card">
+        <h3>Liens rapides</h3>
+        <div style="display:flex;flex-direction:column;gap:8px;margin-top:10px;">
+          <a href="paiements.html"              class="btn-outline" class="text-center">💳 Payer les frais</a>
+          <a href="carte_numerique.html"         class="btn-outline" class="text-center">🪪 Ma carte étudiant</a>
+          <a href="../pages/stages.html"         class="btn-outline" class="text-center">💼 Offres de stages</a>
+          <a href="../pages/bourses.html"        class="btn-outline" class="text-center">🎓 Bourses</a>
+          <a href="../pages/bibliotheque.html"   class="btn-outline" class="text-center">📚 Bibliothèque</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</main>
+</div>
+</div>
+
+<script src="../assets/js/auth-guard.js" data-role="student"></script>
+<script src="../assets/js/main.js"></script>
+<script src="../assets/js/config.js"></script>
+<script src="../assets/js/api.js"></script>
+<script src="../assets/js/utils.js"></script>
+<script src="../assets/js/tests.js"></script>
+<script src="../assets/js/components.js"></script>
+<script>
+// ── Données de fallback (si API non disponible) ──────────────────────────────
+const FALLBACK = {
+  user:   { name: 'Jean Dupont', role: 'student', student_id: 1 },
+  grades: [
+    { course_name: 'Algorithmique', dst_grade: 14, session_grade: 12, final_grade: 12.60, status: 'Admis' },
+    { course_name: 'Base de données', dst_grade: 16, session_grade: 15, final_grade: 15.30, status: 'Admis' },
+    { course_name: 'Réseaux Mobiles', dst_grade: 13, session_grade: 14, final_grade: 13.70, status: 'Admis' },
+  ],
+  nextCourse: { name: 'Développement Web', room: 'Salle 204', time: '14:00', teacher: 'Prof. Martin' },
+  notifications: [
+    { message: 'Rappel de paiement : régularisez votre 2e tranche avant le 30 juin.', is_read: false },
+    { message: 'Note publiée : "Base de données" est disponible.', is_read: true },
+  ]
+};
+
+async function loadDashboard() {
+  // Identité utilisateur
+  const user = ITP_API.auth.currentUser() || FALLBACK.user;
+  document.getElementById('greeting').textContent = `Bonjour, ${user.name || user.username || 'Étudiant'}`;
+  document.getElementById('mode-info').textContent =
+    `Mode : ${window.ITP_CONFIG.mode === 'laravel' ? '⚡ Laravel XAMPP' : '☁️ Supabase'}`;
+
+  // Notes
+  try {
+    const studentId = user.student_id || user.id || 1;
+    const grades    = await ITP_API.grades.getByStudent(studentId);
+    renderGrades(grades);
+  } catch {
+    renderGrades(FALLBACK.grades);
+  }
+
+  // Notifications
+  try {
+    const userId = user.id || 1;
+    const notifs = await ITP_API.notifications.getForUser(userId);
+    renderNotifications(notifs);
+  } catch {
+    renderNotifications(FALLBACK.notifications);
+  }
+
+  // Prochain cours
+  try {
+    const schedules = await ITP_API.courses.getSchedule();
+    const next = schedules[0];
+    if (next) {
+      document.getElementById('next-course').innerHTML = `
+        <p style="margin:0;font-weight:bold;">${next.courses?.name || next.name}</p>
+        <p style="margin:5px 0;font-size:0.9rem;color:#666;">${next.rooms?.name || ''} — ${new Date(next.start_time).toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'})}</p>`;
+    }
+  } catch {
+    const nc = FALLBACK.nextCourse;
+    document.getElementById('next-course').innerHTML = `
+      <p style="margin:0;font-weight:bold;">${nc.name}</p>
+      <p style="margin:5px 0;font-size:0.9rem;color:#666;">${nc.room} — ${nc.time}</p>
+      <p style="margin:0;font-size:0.9rem;">${nc.teacher}</p>`;
+  }
+}
+
+function renderGrades(grades) {
+  document.getElementById('notes-loader').textContent = '';
+  if (!grades || !grades.length) {
+    document.getElementById('notes-table').innerHTML =
+      '<tr><td colspan="5" style="padding:20px;text-align:center;color:#999;">Aucune note disponible</td></tr>';
+    return;
+  }
+  let totalMoy = 0, count = 0;
+  const rows = grades.map(g => {
+    const moy    = parseFloat(g.final_grade || ITP_API.grades.calculate(g.dst_grade, g.session_grade));
+    const st     = ITP_API.grades.status(moy);
+    totalMoy    += moy; count++;
+    return `<tr style="border-bottom:1px solid var(--light-grey);">
+      <td style="padding:10px;">${g.course_name}</td>
+      <td style="padding:10px;">${g.dst_grade ?? '—'}/20</td>
+      <td style="padding:10px;">${g.session_grade ?? '—'}/20</td>
+      <td style="padding:10px;font-weight:bold;">${moy.toFixed(2)}</td>
+      <td style="padding:10px;color:${st.color};font-weight:bold;">${g.status || st.label}</td>
+    </tr>`;
+  }).join('');
+  document.getElementById('notes-table').innerHTML = rows;
+  if (count > 0) {
+    const avg = (totalMoy / count).toFixed(2);
+    document.getElementById('stat-moyenne').textContent = `${avg} / 20`;
+    document.getElementById('stat-credits').textContent = `${count * 3} / 60`;
+    document.getElementById('stat-absences').textContent = '2';
+    document.getElementById('stat-paiement').textContent = '✓ À jour';
+  }
+}
+
+function renderNotifications(notifs) {
+  const unread = notifs.filter(n => !n.is_read).length;
+  const badge  = document.getElementById('notif-badge');
+  if (unread > 0) {
+    badge.style.display = 'flex';
+    badge.textContent   = unread;
+  }
+  const list = document.getElementById('notif-list');
+  list.innerHTML = notifs.map(n => `
+    <div style="padding:10px;border-bottom:1px solid #eee;${!n.is_read ? 'background:#fff9c4;' : ''}">
+      <p style="margin:0;font-size:0.85rem;">${n.message}</p>
+    </div>`).join('') || '<p style="color:#666;text-align:center;padding:20px;">Aucune notification</p>';
+}
+
+function toggleNotifs() {
+  const p = document.getElementById('notif-panel');
+  p.style.display = p.style.display === 'none' ? 'block' : 'none';
+}
+
+// Lancer le chargement
+loadDashboard();
+</script>
+
+<script>
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('../sw.js').catch(() => {});
+}
+</script>
+
+<!-- PWA Banner -->
+<div id="pwa-banner">
+  <div class="d-flex align-center gap-12">
+    <img src="../assets/images/icon-192.png" style="width:36px;height:36px;border-radius:8px;">
+    <div><strong>ITP University</strong><br><small>Installer l'application sur votre appareil</small></div>
+  </div>
+  <div class="d-flex gap-10">
+    <button onclick="installPWA()" style="background:white;color:var(--dark-blue);border:none;padding:8px 16px;border-radius:5px;cursor:pointer;font-weight:bold;">Installer</button>
+    <button onclick="dismissPWA()" style="background:none;border:none;color:rgba(255,255,255,0.7);cursor:pointer;font-size:1.2rem;">&#x2715;</button>
+  </div>
+</div>
+</body></html>

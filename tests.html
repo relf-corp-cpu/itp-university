@@ -1,0 +1,199 @@
+<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Tests — ITP University</title>
+<link rel="stylesheet" href="./assets/css/style.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+<link rel="icon" href="./assets/images/icon-192.png">
+<link rel="manifest" href="./manifest.json"></head><body>
+<div id="itp-header"></div>
+<main role="main" id="main-content" style="padding:50px;max-width:1000px;margin:0 auto;">
+  <div class="page-header">
+    <div>
+      <h2 class="page-title">🧪 Suite de Tests — ITP University</h2>
+      <p class="text-muted-sm">7 groupes · 50+ tests · Calcul notes, Sécurité, API, DOM, Accessibilité</p>
+    </div>
+    <div class="d-flex gap-10">
+      <button class="btn-primary" onclick="runAllTests()" id="run-btn">
+        <i class="fas fa-play"></i> Lancer les tests
+      </button>
+      <button class="btn-outline" onclick="exportResults()">
+        <i class="fas fa-file-excel"></i> Exporter
+      </button>
+    </div>
+  </div>
+
+  <!-- Résumé global -->
+  <div id="summary" class="d-none" class="card mb-30">
+    <div class="d-flex gap-20 align-center flex-wrap">
+      <div style="text-align:center;flex:1;">
+        <div id="total-count" style="font-size:3rem;font-weight:bold;color:var(--dark-blue);">—</div>
+        <p class="text-muted-sm m-0">Tests Total</p>
+      </div>
+      <div style="text-align:center;flex:1;">
+        <div id="pass-count" style="font-size:3rem;font-weight:bold;color:#28a745;">—</div>
+        <p class="text-muted-sm m-0">Réussis ✅</p>
+      </div>
+      <div style="text-align:center;flex:1;">
+        <div id="fail-count" style="font-size:3rem;font-weight:bold;color:var(--red-itp);">—</div>
+        <p class="text-muted-sm m-0">Échoués ❌</p>
+      </div>
+      <div style="text-align:center;flex:1;">
+        <div id="score-pct" style="font-size:3rem;font-weight:bold;">—</div>
+        <p class="text-muted-sm m-0">Score</p>
+      </div>
+    </div>
+    <div style="margin-top:20px;">
+      <div class="progress">
+        <div id="progress-bar" class="progress-bar" style="width:0%;background:#28a745;transition:width 1s ease;"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Résultats par groupe -->
+  <div id="results-container">
+    <!-- Placeholder groupes -->
+    <div id="placeholder" class="card text-center" style="padding:60px;color:#999;">
+      <i class="fas fa-flask" style="font-size:4rem;margin-bottom:20px;display:block;opacity:0.3;"></i>
+      <p style="font-size:1.1rem;">Cliquez sur <strong>Lancer les tests</strong> pour démarrer la suite de tests ITP.</p>
+      <p class="fs-sm">Les tests vérifient : calcul des notes, sécurité, modules API, DOM, accessibilité ARIA.</p>
+    </div>
+  </div>
+
+  <!-- Guide d'utilisation -->
+  <div class="card mt-30">
+    <h3>Comment lancer les tests</h3>
+    <div class="grid-2 mt-20">
+      <div style="padding:15px;background:#f8f9fa;border-radius:6px;">
+        <h4 class="m-0 mb-8"><i class="fas fa-globe" style="color:var(--dark-blue);"></i> Dans cette page</h4>
+        <p class="fs-sm text-muted">Cliquez sur le bouton "Lancer les tests" ci-dessus. Les résultats s'affichent en temps réel.</p>
+      </div>
+      <div style="padding:15px;background:#f8f9fa;border-radius:6px;">
+        <h4 class="m-0 mb-8"><i class="fas fa-terminal" style="color:#2a9d8f;"></i> Console navigateur</h4>
+        <code style="font-size:0.85rem;background:#e8f5e9;padding:5px 10px;border-radius:4px;display:block;">ITP_TESTS.run()</code>
+      </div>
+      <div style="padding:15px;background:#f8f9fa;border-radius:6px;">
+        <h4 class="m-0 mb-8"><i class="fas fa-link" style="color:#e9c46a;"></i> URL auto-run</h4>
+        <code style="font-size:0.85rem;background:#fff3e0;padding:5px 10px;border-radius:4px;display:block;">?tests=1</code>
+        <p class="fs-sm text-muted mt-5">Ajouter à n'importe quelle URL du site.</p>
+      </div>
+      <div style="padding:15px;background:#f8f9fa;border-radius:6px;">
+        <h4 class="m-0 mb-8"><i class="fas fa-file-code" style="color:var(--red-itp);"></i> Script tag</h4>
+        <code style="font-size:0.85rem;background:#ffebee;padding:5px 10px;border-radius:4px;display:block;">&lt;script src="assets/js/tests.js"&gt;</code>
+      </div>
+    </div>
+  </div>
+</main>
+<div id="itp-footer"></div>
+<script src="./assets/js/main.js"></script>
+<script src="./assets/js/config.js"></script>
+<script src="./assets/js/api.js"></script>
+<script src="./assets/js/utils.js"></script>
+<script src="./assets/js/tests.js"></script>
+<script src="./assets/js/components.js"></script>
+<script>
+const GROUP_ICONS = {
+  'Calcul des notes':    { icon:'fa-chart-bar', color:'#1D3557' },
+  'Sécurité':           { icon:'fa-shield-alt', color:'#e63946' },
+  'Configuration API':  { icon:'fa-cog',        color:'#2a9d8f' },
+  'Modules API':        { icon:'fa-plug',        color:'#457b9d' },
+  'Utilitaires':        { icon:'fa-tools',       color:'#e9c46a' },
+  'DOM':                { icon:'fa-code',        color:'#6c757d' },
+  'Accessibilité':      { icon:'fa-universal-access', color:'#28a745' },
+};
+
+async function runAllTests() {
+  const btn = document.getElementById('run-btn');
+  btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> En cours...';
+  btn.disabled = true;
+  document.getElementById('placeholder').style.display = 'none';
+
+  // Lancer les tests
+  await new Promise(r => setTimeout(r, 300));
+  const result = ITP_TESTS.run();
+  const tests  = ITP_TESTS.results();
+
+  // Résumé
+  const summary = document.getElementById('summary');
+  summary.style.display = 'block';
+  document.getElementById('total-count').textContent = result.total;
+  document.getElementById('pass-count').textContent  = result.passed;
+  document.getElementById('fail-count').textContent  = result.failed;
+  document.getElementById('score-pct').textContent   = result.score + '%';
+  document.getElementById('score-pct').style.color   = result.score >= 90 ? '#28a745' : result.score >= 70 ? '#f57c00' : '#e63946';
+  document.getElementById('progress-bar').style.width = result.score + '%';
+  document.getElementById('progress-bar').style.background = result.score >= 90 ? '#28a745' : result.score >= 70 ? '#f57c00' : '#e63946';
+
+  // Grouper les résultats
+  const grouped = {};
+  tests.forEach(t => {
+    // Déduire le groupe depuis le nom (on re-run avec groupes)
+    const group = getGroup(t.name);
+    if (!grouped[group]) grouped[group] = [];
+    grouped[group].push(t);
+  });
+
+  const container = document.getElementById('results-container');
+  container.innerHTML = Object.entries(grouped).map(([gname, gtests]) => {
+    const gPass = gtests.filter(t => t.status === 'PASS').length;
+    const gFail = gtests.filter(t => t.status === 'FAIL').length;
+    const meta  = Object.entries(GROUP_ICONS).find(([k]) => gname.includes(k))?.[1] || { icon:'fa-check', color:'#666' };
+    const rows  = gtests.map(t => `
+      <tr>
+        <td style="padding:8px 12px;">
+          <span style="color:${t.status==='PASS'?'#28a745':'#e63946'};font-size:1rem;">${t.status==='PASS'?'✅':'❌'}</span>
+        </td>
+        <td style="padding:8px 12px;font-size:0.9rem;">${t.name}</td>
+        <td style="padding:8px 12px;font-size:0.82rem;color:#e63946;">${t.error || ''}</td>
+      </tr>`).join('');
+    return `
+      <div class="card mb-15">
+        <div class="d-flex align-center gap-12 mb-15">
+          <div style="width:42px;height:42px;background:${meta.color};border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+            <i class="fas ${meta.icon}" style="color:white;font-size:1.1rem;"></i>
+          </div>
+          <div class="flex-1">
+            <h4 class="m-0">${gname}</h4>
+            <p class="text-muted-sm m-0">${gPass} ✅  ${gFail > 0 ? gFail + ' ❌' : ''}</p>
+          </div>
+          <div>
+            <div class="progress" style="width:100px;">
+              <div class="progress-bar" style="width:${Math.round(gPass/(gPass+gFail)*100)}%;background:${gFail>0?'#f57c00':'#28a745'};"></div>
+            </div>
+          </div>
+        </div>
+        <div style="overflow-x:auto;">
+          <table style="width:100%;border-collapse:collapse;font-size:0.9rem;">
+            <thead><tr style="background:#f8f9fa;text-align:left;">
+              <th style="padding:8px 12px;width:40px;"></th>
+              <th style="padding:8px 12px;">Test</th>
+              <th style="padding:8px 12px;">Erreur</th>
+            </tr></thead>
+            <tbody>${rows}</tbody>
+          </table>
+        </div>
+      </div>`;
+  }).join('');
+
+  btn.innerHTML = '<i class="fas fa-play"></i> Relancer';
+  btn.disabled  = false;
+  showToast(`Tests terminés : ${result.passed}/${result.total} ✅ (${result.score}%)`, result.failed ? 'warning' : 'success', 5000);
+}
+
+function getGroup(name) {
+  if (name.match(/note|statut|DST|Session|Ajourné|Bien|Passable|Compensable|formule/i)) return '📊 Calcul des notes';
+  if (name.match(/Security|sanitize|login|tentative|reset|rate/i)) return '🔒 Sécurité';
+  if (name.match(/ITP_CONFIG|mode|apiBase|headers|Content-Type/i)) return '⚙️ Configuration API';
+  if (name.match(/ITP_API|module|calculate|grades\./i)) return '🔌 Modules API';
+  if (name.match(/PDF|Excel|QR|AI|Toast|Modal|generateQR|showToast/i)) return '🛠️ Utilitaires';
+  if (name.match(/DOM|lang|title|viewport|main|toast container|pwa|manifest|service/i)) return '🌐 DOM';
+  if (name.match(/alt|bouton|label|skip|contraste|role|aria/i)) return '♿ Accessibilité';
+  return '🔧 Autres';
+}
+
+function exportResults() {
+  const tests = ITP_TESTS.results();
+  if (!tests.length) { showToast('Lancez les tests d\'abord.', 'warning'); return; }
+  Excel.exportCSV(tests.map(t => ({ Test: t.name, Statut: t.status, Erreur: t.error || '' })), 'tests_itp.csv');
+}
+</script>
+<script>if('serviceWorker' in navigator){navigator.serviceWorker.register('./sw.js').catch(()=>{})}</script>
+</body></html>

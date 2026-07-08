@@ -1,0 +1,78 @@
+<!DOCTYPE html><html lang="fr"><head>
+  <link rel="manifest" href="../manifest.json">
+  <meta name="theme-color" content="#1D3557"><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Inscription — ITP University</title>
+<link rel="stylesheet" href="../assets/css/style.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+<link rel="icon" href="../assets/images/icon-192.png"></head><body>
+<a href="#main-content" class="sr-only" style="position:absolute;left:-999px;" onfocus="this.style.left='10px'">Aller au contenu principal</a>
+
+<div id="itp-header"></div>
+<main id="main-content" style="display:flex;justify-content:center;align-items:center;min-height:80vh;background-color:#f4f7f6;padding:40px 20px;">
+  <div class="card" style="width:100%;max-width:500px;box-shadow:0 4px 15px rgba(0,0,0,0.1);">
+    <h2 style="text-align:center;margin-bottom:30px;">Créer un compte</h2>
+    <form onsubmit="submitRegister(event)">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:15px;margin-bottom:20px;">
+        <div><label class="form-label">Nom</label><input type="text" required class="form-control"></div>
+        <div><label class="form-label">Prénom</label><input type="text" required class="form-control"></div>
+      </div>
+      <div class="mb-20"><label class="form-label">Email</label><input type="email" required class="form-control"></div>
+      <div class="mb-20"><label class="form-label">Rôle souhaité</label>
+        <select style="width:100%;padding:10px;border:1px solid var(--light-grey);border-radius:4px;">
+          <option value="student">Étudiant</option><option value="professor">Professeur</option>
+        </select>
+      </div>
+      <div class="mb-20"><label class="form-label">Mot de passe</label><input type="password" required class="form-control"></div>
+      <div class="mb-20"><label class="form-label">Confirmer le mot de passe</label><input type="password" required class="form-control"></div>
+      <div class="mb-20"><label class="d-flex align-center gap-10"><input type="checkbox" required> J'accepte les <a href="#" style="color:var(--dark-blue);">conditions d'utilisation</a></label></div>
+      <button type="submit" aria-live="polite" class="btn-primary" style="width:100%;padding:12px;">S'inscrire</button>
+    </form>
+      <p style="text-align:center;margin-top:10px;font-size:0.82rem;color:#888;">
+        Déjà inscrit ? <a href="verify_email.html" style="color:var(--dark-blue);">Vérifier mon email</a>
+      </p>
+      <div style="margin-top:12px;padding:10px;background:#e3f2fd;border-radius:6px;font-size:0.82rem;color:#1565c0;">
+        <i class="fas fa-info-circle"></i> Un email de vérification sera envoyé à votre adresse après inscription.
+      </div>
+    <p style="text-align:center;margin-top:20px;">Déjà un compte ? <a href="login.html" style="color:var(--dark-blue);">Connectez-vous</a></p>
+  </div>
+</main>
+<div id="itp-footer"></div>
+<script src="../assets/js/main.js"></script>
+<script src="../assets/js/config.js"></script>
+<script src="../assets/js/api.js></script><script src="../assets/js/components.js"></script>
+<script>
+async function submitRegister(e) {
+  e.preventDefault();
+  const name  = e.target.querySelector('input[type=text]').value;
+  const email = e.target.querySelector('input[type=email]').value;
+  const role  = e.target.querySelector('select').value;
+  try {
+    // En production : appel API d'inscription
+    // await ITP_API.auth.register({ name, email, role, password });
+    alert('Compte créé avec succès ! Vous pouvez maintenant vous connecter.');
+    window.location.href = 'login.html';
+  } catch(err) {
+    alert('Erreur lors de la création : ' + err.message);
+  }
+}
+</script>
+
+<script>
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('../sw.js').catch(() => {});
+}
+</script>
+
+<!-- PWA Banner -->
+<div id="pwa-banner">
+  <div class="d-flex align-center gap-12">
+    <img src="../assets/images/icon-192.png" style="width:36px;height:36px;border-radius:8px;">
+    <div><strong>ITP University</strong><br><small>Installer l'application sur votre appareil</small></div>
+  </div>
+  <div class="d-flex gap-10">
+    <button onclick="installPWA()" style="background:white;color:var(--dark-blue);border:none;padding:8px 16px;border-radius:5px;cursor:pointer;font-weight:bold;">Installer</button>
+    <button onclick="dismissPWA()" style="background:none;border:none;color:rgba(255,255,255,0.7);cursor:pointer;font-size:1.2rem;">&#x2715;</button>
+  </div>
+</div>
+<script src="../assets/js/tests.js"></script>
+</body></html>

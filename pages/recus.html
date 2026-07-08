@@ -1,0 +1,300 @@
+<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Mes Reçus — ITP University</title>
+<link rel="stylesheet" href="../assets/css/style.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+<link rel="icon" href="../assets/images/icon-192.png">
+<link rel="manifest" href="../manifest.json"></head><body>
+<a href="#main-content" class="sr-only">Aller au contenu principal</a>
+<div id="itp-header"></div>
+<main role="main" id="main-content" style="padding:50px;max-width:1000px;margin:0 auto;">
+  <div class="page-header">
+    <div>
+      <h2 class="page-title">🧾 Mes Reçus de Paiement</h2>
+      <p class="text-muted-sm m-0">Téléchargez et imprimez vos reçus officiels ITP</p>
+    </div>
+    <button class="btn-outline" onclick="exportAllReceipts()"><i class="fas fa-file-excel"></i> Exporter tout</button>
+  </div>
+
+  <!-- Filtres -->
+  <div class="card mb-20">
+    <div class="d-flex gap-10 flex-wrap align-center">
+      <input type="text" id="search-rec" class="form-control" placeholder="Numéro de reçu, type..." style="flex:1;min-width:180px;" oninput="filterReceipts()" aria-label="Rechercher">
+      <select id="filter-status" class="form-control" style="width:auto;" onchange="filterReceipts()" aria-label="Statut">
+        <option value="">Tous</option>
+        <option value="completed">Validés</option>
+        <option value="pending">En attente</option>
+      </select>
+      <select id="filter-year" class="form-control" style="width:auto;" onchange="filterReceipts()" aria-label="Année">
+        <option value="">Toutes années</option>
+        <option value="2025-2026">2025-2026</option>
+        <option value="2024-2025">2024-2025</option>
+      </select>
+    </div>
+  </div>
+
+  <!-- Total payé -->
+  <div class="kpi-row mb-30">
+    <div class="stat-card" style="border-left-color:#28a745;">
+      <p class="stat-label">Total payé</p>
+      <div class="stat-val" id="kpi-total">—</div>
+    </div>
+    <div class="stat-card" style="border-left-color:var(--dark-blue);">
+      <p class="stat-label">Reçus disponibles</p>
+      <div class="stat-val" id="kpi-count">—</div>
+    </div>
+    <div class="stat-card" style="border-left-color:#f57c00;">
+      <p class="stat-label">En attente</p>
+      <div class="stat-val" id="kpi-pending">—</div>
+    </div>
+    <div class="stat-card" style="border-left-color:var(--red-itp);">
+      <p class="stat-label">Solde restant</p>
+      <div class="stat-val" id="kpi-balance">—</div>
+    </div>
+  </div>
+
+  <!-- Liste des reçus -->
+  <div id="receipts-list"></div>
+
+  <!-- Aperçu reçu imprimable -->
+  <div id="receipt-preview" style="display:none;" class="card mt-30">
+    <div id="receipt-print-area" style="max-width:600px;margin:0 auto;font-family:Arial,sans-serif;">
+      <!-- généré dynamiquement -->
+    </div>
+    <div class="d-flex gap-10 justify-center mt-20 d-print-none">
+      <button class="btn-primary" onclick="window.print()"><i class="fas fa-print"></i> Imprimer</button>
+      <button class="btn-outline" onclick="downloadReceiptPDF()"><i class="fas fa-file-pdf"></i> Télécharger PDF</button>
+      <button class="btn-outline" onclick="document.getElementById('receipt-preview').style.display='none'"><i class="fas fa-times"></i> Fermer</button>
+    </div>
+  </div>
+</main>
+<div id="itp-footer"></div>
+
+<style>
+@media print {
+  #itp-header, #itp-footer, .page-header, .card:not(#receipt-preview), .kpi-row, .d-print-none { display:none !important; }
+  #receipt-preview { box-shadow:none !important; border:none !important; }
+}
+</style>
+
+<script src="../assets/js/main.js"></script>
+<script src="../assets/js/config.js"></script>
+<script src="../assets/js/api.js"></script>
+<script src="../assets/js/utils.js"></script>
+<script src="../assets/js/tests.js"></script>
+<script src="../assets/js/components.js"></script>
+<script>
+const FB_RECEIPTS = [
+  { id:1, number:'REC-ITP-000001', type:'Inscription Annuelle',  amount:50000,  method:'MTN',    date:'2026-01-10', status:'completed', year:'2025-2026', transaction:'MTN-ITP-000001' },
+  { id:2, number:'REC-ITP-000002', type:'Scolarité — Tranche 1', amount:200000, method:'Airtel',  date:'2026-03-15', status:'completed', year:'2025-2026', transaction:'ATL-ITP-000002' },
+  { id:3, number:'REC-ITP-000003', type:'Scolarité — Tranche 2', amount:150000, method:'MTN',    date:null,         status:'pending',   year:'2025-2026', transaction:null },
+  { id:4, number:'REC-ITP-000004', type:'Frais de rattrapage',   amount:25000,  method:'Cash',   date:'2026-06-01', status:'completed', year:'2025-2026', transaction:'CSH-ITP-000004' },
+];
+
+const STUDENT = { name:'Djepht MACKAYA', matricule:'ITP-2026-0452', program:'L3 Génie Logiciel', campus:'Brazzaville' };
+let allReceipts = [...FB_RECEIPTS];
+
+async function loadReceipts() {
+  try {
+    const user = ITP_API.auth.currentUser();
+    if (user?.student?.id) {
+      const data = await ITP_API.payments.getHistory(user.student.id);
+      if (data?.payments?.length) {
+        allReceipts = data.payments.map(p => ({
+          id:          p.id,
+          number:      'REC-ITP-' + String(p.id).padStart(6, '0'),
+          type:        p.type,
+          amount:      p.amount,
+          method:      p.method,
+          date:        p.payment_date,
+          status:      p.status,
+          year:        p.academic_year || '2025-2026',
+          transaction: p.transaction_id,
+        }));
+      }
+    }
+  } catch {}
+  filterReceipts();
+}
+
+function filterReceipts() {
+  const q      = document.getElementById('search-rec').value.toLowerCase();
+  const status = document.getElementById('filter-status').value;
+  const year   = document.getElementById('filter-year').value;
+
+  const filtered = allReceipts.filter(r =>
+    (!q      || r.number.toLowerCase().includes(q) || r.type.toLowerCase().includes(q)) &&
+    (!status || r.status === status) &&
+    (!year   || r.year === year)
+  );
+
+  // KPIs
+  const completed = allReceipts.filter(r => r.status === 'completed');
+  const pending   = allReceipts.filter(r => r.status === 'pending');
+  const totalPaid = completed.reduce((s, r) => s + r.amount, 0);
+  const totalPend = pending.reduce((s, r) => s + r.amount, 0);
+
+  document.getElementById('kpi-total').textContent   = (totalPaid / 1000).toFixed(0) + 'K FCFA';
+  document.getElementById('kpi-count').textContent   = completed.length;
+  document.getElementById('kpi-pending').textContent = pending.length;
+  document.getElementById('kpi-balance').textContent = (totalPend / 1000).toFixed(0) + 'K FCFA';
+
+  renderReceipts(filtered);
+}
+
+function renderReceipts(list) {
+  if (!list.length) {
+    document.getElementById('receipts-list').innerHTML = '<div class="card text-center" style="padding:40px;color:#aaa;"><i class="fas fa-receipt" style="font-size:3rem;display:block;margin-bottom:15px;opacity:0.3;"></i><p>Aucun reçu trouvé.</p></div>';
+    return;
+  }
+
+  document.getElementById('receipts-list').innerHTML = list.map(r => {
+    const isCompleted = r.status === 'completed';
+    return `
+    <div class="card mb-15" style="border-left:5px solid ${isCompleted ? '#28a745' : '#f57c00'};">
+      <div class="d-flex justify-between align-center flex-wrap gap-10">
+        <div class="d-flex align-center gap-15">
+          <div style="width:48px;height:48px;background:${isCompleted ? '#e8f5e9' : '#fff3e0'};border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+            <i class="fas fa-receipt" style="color:${isCompleted ? '#28a745' : '#f57c00'};font-size:1.2rem;"></i>
+          </div>
+          <div>
+            <h4 class="m-0" style="font-size:0.95rem;">${Security.sanitize(r.type)}</h4>
+            <p class="text-muted-sm m-0">${r.number} · ${r.method}</p>
+            <p class="text-muted-sm m-0">${r.date ? new Date(r.date).toLocaleDateString('fr-FR', {day:'2-digit',month:'long',year:'numeric'}) : 'Date non définie'}</p>
+          </div>
+        </div>
+        <div class="text-center">
+          <div style="font-size:1.4rem;font-weight:bold;color:${isCompleted ? '#28a745' : '#f57c00'};">
+            ${(r.amount).toLocaleString('fr-FR')} FCFA
+          </div>
+          <span class="badge ${isCompleted ? 'badge-success' : 'badge-warning'}">${isCompleted ? '✓ Validé' : '⏳ En attente'}</span>
+        </div>
+        <div class="d-flex gap-8">
+          ${isCompleted ? `
+          <button class="btn-primary" style="padding:8px 16px;font-size:0.85rem;" onclick="showReceipt(${r.id})">
+            <i class="fas fa-eye"></i> Voir
+          </button>
+          <button class="btn-outline" style="padding:8px 16px;font-size:0.85rem;" onclick="printReceipt(${r.id})">
+            <i class="fas fa-print"></i> Imprimer
+          </button>` : `
+          <a href="../student/paiements.html" class="btn-primary" style="padding:8px 16px;font-size:0.85rem;text-decoration:none;">
+            <i class="fas fa-credit-card"></i> Payer
+          </a>`}
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function showReceipt(id) {
+  const r = allReceipts.find(x => x.id === id);
+  if (!r) return;
+
+  const html = `
+    <div style="border:2px solid #1D3557;border-radius:8px;padding:30px;">
+      <!-- En-tête -->
+      <div style="text-align:center;border-bottom:3px solid #1D3557;padding-bottom:20px;margin-bottom:20px;">
+        <h2 style="color:#1D3557;margin:0;font-size:1.3rem;">INSTITUT TECHNIQUE POLYTECHNIQUE (ITP)</h2>
+        <p style="margin:4px 0;color:#666;font-size:0.85rem;">19, rue 5 février 1978 · Poto-Poto, Brazzaville · République du Congo</p>
+        <p style="margin:4px 0;color:#666;font-size:0.85rem;">Tél : +242 06 434 69 89 · contact@itp-university.cg</p>
+        <h3 style="color:#1D3557;margin:15px 0 0;letter-spacing:2px;">REÇU DE PAIEMENT</h3>
+      </div>
+
+      <!-- Numéro et date -->
+      <div style="display:flex;justify-content:space-between;margin-bottom:20px;background:#f8f9fa;padding:12px;border-radius:6px;">
+        <div><strong>N° Reçu :</strong> ${r.number}</div>
+        <div><strong>Date :</strong> ${r.date ? new Date(r.date).toLocaleDateString('fr-FR') : '—'}</div>
+      </div>
+
+      <!-- Infos étudiant -->
+      <table style="width:100%;border-collapse:collapse;margin-bottom:20px;">
+        <tr style="background:#1D3557;color:white;">
+          <th colspan="2" style="padding:10px;text-align:left;">INFORMATIONS DE L'ÉTUDIANT</th>
+        </tr>
+        <tr><td style="padding:8px;border:1px solid #ddd;width:40%;"><strong>Nom complet</strong></td><td style="padding:8px;border:1px solid #ddd;">${STUDENT.name}</td></tr>
+        <tr><td style="padding:8px;border:1px solid #ddd;"><strong>Matricule</strong></td><td style="padding:8px;border:1px solid #ddd;">${STUDENT.matricule}</td></tr>
+        <tr><td style="padding:8px;border:1px solid #ddd;"><strong>Filière</strong></td><td style="padding:8px;border:1px solid #ddd;">${STUDENT.program}</td></tr>
+        <tr><td style="padding:8px;border:1px solid #ddd;"><strong>Campus</strong></td><td style="padding:8px;border:1px solid #ddd;">${STUDENT.campus}</td></tr>
+      </table>
+
+      <!-- Détail paiement -->
+      <table style="width:100%;border-collapse:collapse;margin-bottom:20px;">
+        <tr style="background:#1D3557;color:white;">
+          <th style="padding:10px;text-align:left;">Désignation</th>
+          <th style="padding:10px;text-align:right;">Montant (FCFA)</th>
+        </tr>
+        <tr>
+          <td style="padding:10px;border:1px solid #ddd;">${Security.sanitize(r.type)}</td>
+          <td style="padding:10px;border:1px solid #ddd;text-align:right;font-weight:bold;">${r.amount.toLocaleString('fr-FR')}</td>
+        </tr>
+        <tr style="background:#e8f5e9;">
+          <td style="padding:10px;border:1px solid #ddd;font-weight:bold;">TOTAL PAYÉ</td>
+          <td style="padding:10px;border:1px solid #ddd;text-align:right;font-weight:bold;font-size:1.1rem;color:#2e7d32;">${r.amount.toLocaleString('fr-FR')} FCFA</td>
+        </tr>
+      </table>
+
+      <!-- Méthode et référence -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:15px;margin-bottom:20px;">
+        <div style="background:#f8f9fa;padding:12px;border-radius:6px;">
+          <p style="margin:0;font-size:0.85rem;color:#666;">Méthode de paiement</p>
+          <strong>${r.method}</strong>
+        </div>
+        <div style="background:#f8f9fa;padding:12px;border-radius:6px;">
+          <p style="margin:0;font-size:0.85rem;color:#666;">Référence transaction</p>
+          <strong style="font-size:0.9rem;">${r.transaction || '—'}</strong>
+        </div>
+      </div>
+
+      <!-- Statut -->
+      <div style="text-align:center;padding:15px;background:#e8f5e9;border-radius:8px;margin-bottom:20px;">
+        <span style="color:#2e7d32;font-weight:bold;font-size:1.1rem;">✓ PAIEMENT VALIDÉ</span>
+      </div>
+
+      <!-- Signatures -->
+      <div style="display:flex;justify-content:space-between;margin-top:30px;">
+        <div style="text-align:center;width:200px;">
+          <div style="border-top:1px solid #333;padding-top:8px;font-size:0.82rem;">Signature du Caissier</div>
+        </div>
+        <div style="text-align:center;width:200px;">
+          <div style="border-top:1px solid #333;padding-top:8px;font-size:0.82rem;">Cachet de l'ITP</div>
+        </div>
+      </div>
+
+      <!-- Footer -->
+      <p style="text-align:center;margin-top:20px;font-size:0.75rem;color:#999;border-top:1px solid #eee;padding-top:10px;">
+        Ce reçu est un document officiel délivré par l'ITP. Conservez-le pour toute réclamation.
+      </p>
+    </div>`;
+
+  document.getElementById('receipt-print-area').innerHTML = html;
+  document.getElementById('receipt-preview').style.display = 'block';
+  document.getElementById('receipt-preview').scrollIntoView({ behavior:'smooth' });
+  Security.log('receipt_viewed', { receipt: r.number });
+}
+
+function printReceipt(id) {
+  showReceipt(id);
+  setTimeout(() => window.print(), 500);
+}
+
+function downloadReceiptPDF() {
+  showToast('📥 Téléchargement du reçu en PDF...', 'info', 3000);
+  Security.log('receipt_downloaded');
+}
+
+function exportAllReceipts() {
+  const completed = allReceipts.filter(r => r.status === 'completed');
+  Excel.exportCSV(completed.map(r => ({
+    'N° Reçu':      r.number,
+    'Type':         r.type,
+    'Montant FCFA': r.amount,
+    'Méthode':      r.method,
+    'Date':         r.date || '—',
+    'Référence':    r.transaction || '—',
+    'Statut':       r.status,
+  })), 'recus_itp.csv');
+}
+
+loadReceipts();
+</script>
+<script>if('serviceWorker' in navigator){navigator.serviceWorker.register('../sw.js').catch(()=>{})}</script>
+</body></html>

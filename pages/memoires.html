@@ -1,0 +1,158 @@
+<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Mémoires — ITP University</title>
+<link rel="stylesheet" href="../assets/css/style.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+<link rel="icon" href="../assets/images/icon-192.png">
+<link rel="manifest" href="../manifest.json"></head><body>
+<a href="#main-content" class="sr-only">Aller au contenu principal</a>
+<div id="itp-header"></div>
+<main role="main" id="main-content" style="padding:50px;max-width:1100px;margin:0 auto;">
+  <h2 class="text-center mb-10">📖 Mémoires de Fin d'Études</h2>
+  <p class="text-center text-muted mb-40">Bibliothèque des travaux de recherche des étudiants ITP</p>
+
+  <div class="d-flex gap-10 flex-wrap justify-between mb-30">
+    <div class="d-flex gap-10 flex-wrap" style="flex:1;">
+      <input type="text" id="search-memoire" class="form-control" placeholder="Titre, auteur, filière..." style="flex:1;min-width:200px;" oninput="filterMemoires()" aria-label="Rechercher un mémoire">
+      <select id="filter-annee" class="form-control" style="width:auto;" onchange="filterMemoires()" aria-label="Filtrer par année">
+        <option value="">Toutes années</option>
+        <option>2025-2026</option><option>2024-2025</option><option>2023-2024</option>
+      </select>
+      <select id="filter-filiere-mem" class="form-control" style="width:auto;" onchange="filterMemoires()" aria-label="Filtrer par filière">
+        <option value="">Toutes filières</option>
+        <option>Génie Logiciel</option><option>Réseaux & Télécoms</option><option>Cybersécurité</option>
+      </select>
+    </div>
+    <button class="btn-primary" onclick="openDepositMemoire()"><i class="fas fa-upload"></i> Déposer mon mémoire</button>
+  </div>
+
+  <p id="memoire-status" class="text-muted-sm mb-20"></p>
+  <div id="memoires-grid" class="grid-auto"></div>
+
+  <!-- Guide de rédaction -->
+  <div class="card mt-40" style="background:#f0f4ff;">
+    <h3><i class="fas fa-info-circle" style="color:var(--dark-blue);"></i> Guide de rédaction du mémoire</h3>
+    <div class="grid-2 mt-15">
+      <div>
+        <h4 class="fs-sm">Structure attendue</h4>
+        <ul class="fs-sm" style="padding-left:20px;">
+          <li>Page de garde + remerciements</li>
+          <li>Introduction générale</li>
+          <li>État de l'art / Revue de littérature</li>
+          <li>Méthodologie et conception</li>
+          <li>Implémentation et résultats</li>
+          <li>Conclusion et perspectives</li>
+        </ul>
+      </div>
+      <div>
+        <h4 class="fs-sm">Modalités</h4>
+        <ul class="fs-sm" style="padding-left:20px;">
+          <li>Format PDF uniquement, max. 50 Mo</li>
+          <li>40 à 80 pages recommandées</li>
+          <li>Soutenance devant un jury de 3 membres</li>
+          <li>Dépôt 15 jours avant la soutenance</li>
+        </ul>
+      </div>
+    </div>
+    <button class="btn-outline mt-10" onclick="downloadTemplate()"><i class="fas fa-file-word"></i> Télécharger le modèle (.docx)</button>
+  </div>
+</main>
+<div id="itp-footer"></div>
+<script src="../assets/js/main.js"></script>
+<script src="../assets/js/config.js"></script>
+<script src="../assets/js/api.js"></script>
+<script src="../assets/js/utils.js"></script>
+<script src="../assets/js/tests.js"></script>
+<script src="../assets/js/components.js"></script>
+<script>
+const FB_MEMOIRES = [
+  { id:1, title:'Conception d\'un système de gestion universitaire avec Laravel et Supabase', author:'Djepht MACKAYA', filiere:'Génie Logiciel', annee:'2025-2026', mention:'Très Bien', jury:'Prof. Moukoko, Prof. Martin, Prof. Nguimbi', pages:68 },
+  { id:2, title:'Sécurisation des réseaux IoT en environnement urbain africain', author:'Alice M\'BOKA', filiere:'Réseaux & Télécoms', annee:'2024-2025', mention:'Bien', jury:'Prof. Nguimbi, Prof. Ibara', pages:54 },
+  { id:3, title:'Détection d\'intrusions par apprentissage automatique', author:'Moussa TRAORÉ', filiere:'Cybersécurité', annee:'2024-2025', mention:'Très Bien', jury:'Prof. Ibara, Prof. Louzolo, Prof. Martin', pages:72 },
+  { id:4, title:'Application mobile de paiement Mobile Money intégrée', author:'Patrick LOUZOLO', filiere:'Génie Logiciel', annee:'2023-2024', mention:'Assez Bien', jury:'Prof. Moukoko, Prof. Martin', pages:46 },
+  { id:5, title:'Architecture microservices pour systèmes universitaires distribués', author:'Sarah KIMBEMBE', filiere:'Génie Logiciel', annee:'2023-2024', mention:'Bien', jury:'Prof. Martin, Prof. Nguimbi', pages:61 },
+];
+
+let allMemoires = [...FB_MEMOIRES];
+
+function renderMemoires(list) {
+  document.getElementById('memoire-status').textContent = `${list.length} mémoire(s) trouvé(s)`;
+  const mentionColors = { 'Très Bien':'#1565c0', 'Bien':'#2e7d32', 'Assez Bien':'#f57c00', 'Passable':'#999' };
+  document.getElementById('memoires-grid').innerHTML = list.map(m => `
+    <div class="card">
+      <div class="d-flex justify-between align-center mb-10">
+        <span class="badge" style="background:${mentionColors[m.mention]||'#999'};color:white;">${m.mention}</span>
+        <span class="text-muted-sm">${m.annee}</span>
+      </div>
+      <h4 class="mb-8" style="line-height:1.3;">${Security.sanitize(m.title)}</h4>
+      <p class="text-muted-sm mb-5"><i class="fas fa-user"></i> ${Security.sanitize(m.author)}</p>
+      <p class="text-muted-sm mb-5"><i class="fas fa-layer-group"></i> ${m.filiere}</p>
+      <p class="text-muted-sm mb-10"><i class="fas fa-file-alt"></i> ${m.pages} pages</p>
+      <p class="fs-xs text-muted mb-15"><i class="fas fa-users"></i> Jury : ${m.jury}</p>
+      <div class="d-flex gap-8">
+        <button class="btn-primary" style="flex:1;font-size:0.82rem;" onclick="downloadMemoire('${Security.sanitize(m.title)}')"><i class="fas fa-download"></i> Télécharger</button>
+        <button class="btn-outline" style="font-size:0.82rem;" onclick="viewAbstract(${m.id})"><i class="fas fa-eye"></i></button>
+      </div>
+    </div>`).join('') || '<p class="text-muted-sm text-center" style="grid-column:1/-1;">Aucun mémoire trouvé.</p>';
+}
+
+function filterMemoires() {
+  const q       = document.getElementById('search-memoire').value.toLowerCase();
+  const annee   = document.getElementById('filter-annee').value;
+  const filiere = document.getElementById('filter-filiere-mem').value;
+  renderMemoires(allMemoires.filter(m =>
+    (!q || (m.title+m.author).toLowerCase().includes(q)) &&
+    (!annee || m.annee === annee) &&
+    (!filiere || m.filiere === filiere)
+  ));
+}
+
+function downloadMemoire(title) {
+  const user = ITP_API.auth.currentUser();
+  if (!user) { if(confirm('Connectez-vous pour télécharger.')) window.location.href='../auth/login.html'; return; }
+  Security.log('memoire_downloaded', { title });
+  showToast(`📥 Téléchargement de "${title}"...`, 'info', 4000);
+}
+
+function viewAbstract(id) {
+  const m = allMemoires.find(x => x.id === id);
+  Modal.show(m.title, `
+    <p><strong>Auteur :</strong> ${m.author}</p>
+    <p><strong>Filière :</strong> ${m.filiere} — ${m.annee}</p>
+    <p><strong>Mention :</strong> ${m.mention}</p>
+    <p><strong>Jury :</strong> ${m.jury}</p>
+    <p class="mt-15">Ce mémoire présente une étude approfondie sur le sujet, avec une méthodologie rigoureuse et des résultats validés par le jury de l'ITP.</p>`,
+    [{ label:'Télécharger', cls:'btn-primary', fn:`downloadMemoire('${m.title.replace(/'/g,"\\'")}');Modal.close()` }]
+  );
+}
+
+function downloadTemplate() {
+  showToast('📄 Téléchargement du modèle de mémoire ITP...', 'info', 3000);
+}
+
+function openDepositMemoire() {
+  const user = ITP_API.auth.currentUser();
+  if (!user) { if(confirm('Connectez-vous pour déposer votre mémoire.')) window.location.href='../auth/login.html'; return; }
+  Modal.show('Déposer mon mémoire',
+    `<div class="form-group"><label class="form-label">Titre du mémoire</label><input id="m-title" class="form-control" required></div>
+     <div class="form-grid-2">
+       <div class="form-group"><label class="form-label">Filière</label><select id="m-filiere" class="form-control"><option>Génie Logiciel</option><option>Réseaux & Télécoms</option><option>Cybersécurité</option></select></div>
+       <div class="form-group"><label class="form-label">Année</label><input id="m-annee" class="form-control" value="2025-2026"></div>
+     </div>
+     <div class="form-group"><label class="form-label">Fichier PDF (max 50 Mo)</label><input type="file" id="m-file" accept=".pdf" class="form-control" required></div>`,
+    [{ label:'Soumettre', cls:'btn-primary', fn:'submitMemoire()' }, { label:'Annuler', cls:'btn-outline', fn:'Modal.close()' }]
+  );
+}
+
+function submitMemoire() {
+  const title = document.getElementById('m-title')?.value?.trim();
+  const file  = document.getElementById('m-file')?.files[0];
+  if (!title || !file) { showToast('Titre et fichier obligatoires.','warning'); return; }
+  Security.log('memoire_submitted', { title, filename: file.name });
+  Modal.close();
+  showToast('✅ Mémoire soumis ! Il sera examiné par la Direction des Études.', 'success', 5000);
+}
+
+renderMemoires(allMemoires);
+</script>
+<script>if('serviceWorker' in navigator){navigator.serviceWorker.register('../sw.js').catch(()=>{})}</script>
+</body></html>

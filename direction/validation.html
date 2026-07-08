@@ -1,0 +1,74 @@
+<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Validation des Notes — ITP University</title>
+<link rel="stylesheet" href="../assets/css/style.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+<link rel="manifest" href="../manifest.json"></head><body>
+<a href="#main-content" class="sr-only">Aller au contenu principal</a>
+<div class="dashboard-layout">
+<aside class="sidebar" role="complementary" aria-label="Menu direction">
+  <h3>Direction</h3>
+  <nav role="navigation" aria-label="Navigation principale" style="display:flex;flex-direction:column;gap:10px;margin-top:20px;">
+    <a href="index.html"       class="nav-link"><i class="fas fa-chart-line"></i> Tableau de bord</a>
+    <a href="deliberations.html" class="nav-link"><i class="fas fa-gavel"></i> Délibérations</a>
+    <a href="validation.html"  class="nav-link"><i class="fas fa-check-double"></i> Validation notes</a>
+    <a href="rapports.html"    class="nav-link"><i class="fas fa-file-pdf"></i> Rapports & PV</a>
+    <a href="emplois_du_temps.html" class="nav-link"><i class="fas fa-calendar-alt"></i> Emplois du temps</a>
+    <a href="bourses.html"     class="nav-link"><i class="fas fa-award"></i> Bourses</a>
+    <a href="#" onclick="if(confirm('Se déconnecter ?')){localStorage.clear();window.location='../auth/login.html';}" class="nav-link"><i class="fas fa-sign-out-alt"></i> Déconnexion</a>
+  </nav>
+</aside>
+<main class="dashboard-main" id="main-content" role="main">
+
+  <div class="page-header">
+    <div><h2 class="page-title">Validation des Notes</h2><p class="text-muted-sm m-0">Approuver les notes saisies par les professeurs</p></div>
+    <button class="btn-primary" onclick="validateAll()"><i class="fas fa-check-double"></i> Tout valider</button>
+  </div>
+  <div class="card" style="padding:0;overflow:hidden;">
+    <div class="table-wrapper">
+      <table class="data-table" role="table">
+        <thead><tr><th>Matière</th><th>Professeur</th><th>Étudiants</th><th>Moy. classe</th><th>Min</th><th>Max</th><th>Soumis le</th><th>Action</th></tr></thead>
+        <tbody id="val-table"></tbody>
+      </table>
+    </div>
+  </div>
+  <script>
+  const FB_VAL=[
+    {id:1,course:"Algorithmique",prof:"Prof. Moukoko",students:45,avg:12.6,min:7.2,max:18.5,submitted:"2026-06-25",validated:false},
+    {id:2,course:"Base de données",prof:"Prof. Moukoko",students:42,avg:14.1,min:8.5,max:19.0,submitted:"2026-06-26",validated:false},
+    {id:3,course:"Développement Web",prof:"Prof. Martin",students:38,avg:13.8,min:9.0,max:18.5,submitted:"2026-06-24",validated:true},
+    {id:4,course:"Mathématiques",prof:"Prof. Moukoko",students:50,avg:10.9,min:4.5,max:17.5,submitted:"2026-06-23",validated:true},
+    {id:5,course:"Réseaux Mobiles",prof:"Prof. Martin",students:35,avg:12.1,min:6.0,max:17.0,submitted:"2026-06-27",validated:false},
+  ];
+  let notes=[...FB_VAL];
+  function renderVal(){
+    document.getElementById("val-table").innerHTML=notes.map(n=>`<tr style="${n.validated?"opacity:0.7":""}">
+      <td><strong>${n.course}</strong></td><td class="text-muted-sm">${n.prof}</td>
+      <td>${n.students}</td>
+      <td style="font-weight:bold;color:${n.avg>=12?"#28a745":"#f57c00"};">${n.avg}/20</td>
+      <td class="text-muted-sm">${n.min}</td><td class="text-muted-sm">${n.max}</td>
+      <td class="text-muted-sm">${new Date(n.submitted).toLocaleDateString("fr-FR")}</td>
+      <td>${n.validated
+        ? "<span class="badge badge-success">✓ Validées</span>"
+        : `<button class="btn-primary" style="padding:4px 12px;font-size:0.78rem;" onclick="validate(${n.id})">Valider</button>`}
+      </td></tr>`).join("");
+  }
+  function validate(id){
+    notes.find(n=>n.id===id).validated=true;
+    renderVal();showToast("✅ Notes validées !","success");Security.log("notes_validated",{course:notes.find(n=>n.id===id)?.course});
+  }
+  function validateAll(){
+    notes.forEach(n=>n.validated=true);renderVal();showToast("✅ Toutes les notes validées !","success");Security.log("all_notes_validated");
+  }
+  renderVal();
+  </script>
+</main>
+</div>
+<script src="../assets/js/main.js"></script>
+<script src="../assets/js/config.js"></script>
+<script src="../assets/js/api.js"></script>
+<script src="../assets/js/utils.js"></script>
+<script src="../assets/js/auth-guard.js" data-role="direction,admin"></script>
+<script src="../assets/js/tests.js"></script>
+<script src="../assets/js/components.js"></script>
+<script>if('serviceWorker' in navigator){navigator.serviceWorker.register('../sw.js').catch(()=>{})}</script>
+</body></html>

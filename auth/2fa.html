@@ -1,0 +1,63 @@
+<!DOCTYPE html><html lang="fr"><head>
+  <link rel="manifest" href="../manifest.json">
+  <meta name="theme-color" content="#1D3557"><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Vérification 2FA — ITP University</title>
+<link rel="stylesheet" href="../assets/css/style.css">
+<link rel="icon" href="../assets/images/icon-192.png"></head><body>
+<a href="#main-content" class="sr-only" style="position:absolute;left:-999px;" onfocus="this.style.left='10px'">Aller au contenu principal</a>
+
+<div id="itp-header"></div>
+<main id="main-content" style="display:flex;justify-content:center;align-items:center;min-height:80vh;background-color:#f4f7f6;">
+  <div class="card" style="width:100%;max-width:400px;text-align:center;box-shadow:0 4px 15px rgba(0,0,0,0.1);">
+    <h2 class="mb-20">Vérification 2FA</h2>
+    <p style="color:#666;margin-bottom:30px;">Un code de vérification a été envoyé à votre email ou par SMS.</p>
+    <form onsubmit="verify2fa(event)">
+      <div style="display:flex;justify-content:center;gap:10px;margin-bottom:30px;" id="code-inputs">
+        <input type="text" maxlength="1" class="code-box" style="width:45px;height:55px;text-align:center;font-size:1.5rem;border:1px solid var(--light-grey);border-radius:5px;" oninput="nextInput(this,0)">
+        <input type="text" maxlength="1" class="code-box" style="width:45px;height:55px;text-align:center;font-size:1.5rem;border:1px solid var(--light-grey);border-radius:5px;" oninput="nextInput(this,1)">
+        <input type="text" maxlength="1" class="code-box" style="width:45px;height:55px;text-align:center;font-size:1.5rem;border:1px solid var(--light-grey);border-radius:5px;" oninput="nextInput(this,2)">
+        <input type="text" maxlength="1" class="code-box" style="width:45px;height:55px;text-align:center;font-size:1.5rem;border:1px solid var(--light-grey);border-radius:5px;" oninput="nextInput(this,3)">
+        <input type="text" maxlength="1" class="code-box" style="width:45px;height:55px;text-align:center;font-size:1.5rem;border:1px solid var(--light-grey);border-radius:5px;" oninput="nextInput(this,4)">
+        <input type="text" maxlength="1" class="code-box" style="width:45px;height:55px;text-align:center;font-size:1.5rem;border:1px solid var(--light-grey);border-radius:5px;" oninput="nextInput(this,5)">
+      </div>
+      <button type="submit" aria-live="polite" class="btn-primary" style="width:100%;padding:12px;">Vérifier</button>
+    </form>
+    <p style="margin-top:20px;font-size:0.9rem;">Vous n'avez pas reçu le code ? <a href="#" onclick="alert('Code renvoyé !')" style="color:var(--dark-blue);">Renvoyer</a></p>
+  </div>
+</main>
+<div id="itp-footer"></div>
+<script src="../assets/js/main.js"></script>
+<script src="../assets/js/config.js"></script>
+<script src="../assets/js/api.js></script><script src="../assets/js/components.js"></script>
+<script>
+function nextInput(el, idx) {
+  const boxes = document.querySelectorAll('.code-box');
+  if (el.value && idx < 5) boxes[idx+1].focus();
+}
+function verify2fa(e) {
+  e.preventDefault();
+  const code = Array.from(document.querySelectorAll('.code-box')).map(i=>i.value).join('');
+  if (code.length === 6) window.location.href = '../student/index.html';
+  else alert('Veuillez saisir les 6 chiffres du code.');
+}
+</script>
+
+<script>
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('../sw.js').catch(() => {});
+}
+</script>
+
+<!-- PWA Banner -->
+<div id="pwa-banner">
+  <div class="d-flex align-center gap-12">
+    <img src="../assets/images/icon-192.png" style="width:36px;height:36px;border-radius:8px;">
+    <div><strong>ITP University</strong><br><small>Installer l'application sur votre appareil</small></div>
+  </div>
+  <div class="d-flex gap-10">
+    <button onclick="installPWA()" style="background:white;color:var(--dark-blue);border:none;padding:8px 16px;border-radius:5px;cursor:pointer;font-weight:bold;">Installer</button>
+    <button onclick="dismissPWA()" style="background:none;border:none;color:rgba(255,255,255,0.7);cursor:pointer;font-size:1.2rem;">&#x2715;</button>
+  </div>
+</div>
+<script src="../assets/js/tests.js"></script>
+</body></html>

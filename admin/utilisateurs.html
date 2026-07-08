@@ -1,0 +1,254 @@
+<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Utilisateurs — ITP University</title>
+<link rel="stylesheet" href="../assets/css/style.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+<link rel="icon" href="../assets/images/icon-192.png">
+<link rel="manifest" href="../manifest.json"></head><body>
+<a href="#main-content" class="sr-only">Aller au contenu principal</a>
+<div class="dashboard-layout">
+<aside class="sidebar" role="complementary" aria-label="Menu administrateur">
+  <h3>Administration</h3>
+      <nav role="navigation" aria-label="Navigation principale" style="display:flex;flex-direction:column;gap:10px;margin-top:20px;">
+    <a href="index.html"        class="nav-link"><i class="fas fa-chart-line"></i> Tableau de bord</a>
+    <a href="analytics.html"    class="nav-link"><i class="fas fa-chart-bar"></i> Analytique</a>
+    <a href="utilisateurs.html" class="nav-link active"><i class="fas fa-users"></i> Utilisateurs</a>
+    <a href="academic.html"     class="nav-link"><i class="fas fa-graduation-cap"></i> Structure Académique</a>
+    <a href="logs.html"         class="nav-link"><i class="fas fa-history"></i> Journal</a>
+    <a href="parametres.html"   class="nav-link"><i class="fas fa-cog"></i> Paramètres</a>
+    <a href="permissions.html"  class="nav-link"><i class="fas fa-shield-alt"></i> Permissions</a>
+    <a href="sauvegardes.html"  class="nav-link"><i class="fas fa-database"></i> Sauvegardes</a>
+    <a href="#" onclick="if(confirm('Se déconnecter ?')){localStorage.clear();window.location='../auth/login.html';}" class="nav-link"><i class="fas fa-sign-out-alt"></i> Déconnexion</a>
+  </nav>
+</aside>
+<main class="dashboard-main" id="main-content" role="main">
+  <div class="page-header">
+    <div>
+      <h2 class="page-title">Gestion des Utilisateurs</h2>
+      <p class="text-muted-sm m-0" id="mode-badge"></p>
+    </div>
+    <div class="d-flex gap-10">
+      <button class="btn-outline" onclick="Excel.exportStudents(allUsers,'utilisateurs_itp.csv')"><i class="fas fa-file-excel"></i> Export</button>
+      <button class="btn-primary" onclick="openAddUser()"><i class="fas fa-user-plus"></i> Nouvel utilisateur</button>
+    </div>
+  </div>
+
+  <!-- Filtres -->
+  <div class="card mb-20">
+    <div class="d-flex gap-10 flex-wrap align-center">
+      <input type="text" id="search-users" class="form-control" placeholder="Nom, email, identifiant..." style="flex:1;min-width:200px;" oninput="filterUsers()" aria-label="Rechercher">
+      <select id="filter-role" class="form-control" style="width:auto;" onchange="filterUsers()" aria-label="Filtrer par rôle">
+        <option value="">Tous les rôles</option>
+        <option value="student">Étudiant</option>
+        <option value="professor">Professeur</option>
+        <option value="secretary">Secrétariat</option>
+        <option value="direction">Direction</option>
+        <option value="admin">Administrateur</option>
+      </select>
+      <button class="btn-outline" onclick="loadUsers()"><i class="fas fa-sync"></i></button>
+    </div>
+  </div>
+
+  <!-- Statistiques rôles -->
+  <div class="kpi-row mb-30">
+    <div class="stat-card" style="border-left-color:#1D3557;" id="kpi-total"><p class="stat-label">Total</p><div class="stat-val">—</div></div>
+    <div class="stat-card" style="border-left-color:#e63946;" id="kpi-students"><p class="stat-label">Étudiants</p><div class="stat-val">—</div></div>
+    <div class="stat-card" style="border-left-color:#2a9d8f;" id="kpi-professors"><p class="stat-label">Professeurs</p><div class="stat-val">—</div></div>
+    <div class="stat-card" style="border-left-color:#e9c46a;" id="kpi-staff"><p class="stat-label">Personnel</p><div class="stat-val">—</div></div>
+  </div>
+
+  <!-- Table utilisateurs -->
+  <div class="card" style="padding:0;overflow:hidden;">
+    <div class="table-wrapper">
+      <table class="data-table" role="table" aria-label="Liste des utilisateurs">
+        <thead><tr>
+          <th>Nom</th><th>Identifiant</th><th>Email</th><th>Rôle</th><th>Créé le</th><th>Actions</th>
+        </tr></thead>
+        <tbody id="users-table">
+          <tr><td colspan="6" style="padding:20px;text-align:center;color:#999;"><i class="fas fa-spinner fa-spin"></i> Chargement...</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="d-flex justify-between align-center" style="padding:15px 20px;border-top:1px solid var(--light-grey);">
+      <span id="pagination-info" class="text-muted-sm"></span>
+      <div class="d-flex gap-8">
+        <button id="prev-btn" class="btn-outline" onclick="changePage(-1)" disabled>← Préc.</button>
+        <button id="next-btn" class="btn-outline" onclick="changePage(1)">Suiv. →</button>
+      </div>
+    </div>
+  </div>
+</main>
+</div>
+
+<script src="../assets/js/main.js"></script>
+<script src="../assets/js/config.js"></script>
+<script src="../assets/js/api.js"></script>
+<script src="../assets/js/utils.js"></script>
+<script src="../assets/js/auth-guard.js" data-role="admin"></script>
+<script src="../assets/js/tests.js"></script>
+<script src="../assets/js/components.js"></script>
+<script>
+document.getElementById('mode-badge').textContent = ITP_CONFIG.mode === 'laravel' ? '⚡ Laravel XAMPP' : '☁️ Supabase';
+
+const ROLE_COLORS = { admin:'#1D3557', professor:'#457b9d', student:'#e63946', secretary:'#2a9d8f', direction:'#e9c46a' };
+const ROLE_LABELS = { admin:'Admin', professor:'Professeur', student:'Étudiant', secretary:'Secrétariat', direction:'Direction' };
+
+const FB_USERS = [
+  { id:1, username:'admin_itp',   name:'Admin ITP',           email:'admin@itp-university.cg',   role:'admin',     created_at:'2026-01-01' },
+  { id:2, username:'prof_michel', name:'Prof. Michel Moukoko',email:'michel@itp-university.cg',  role:'professor', created_at:'2026-01-10' },
+  { id:3, username:'djepht',      name:'Djepht MACKAYA',      email:'djepht@itp-university.cg',  role:'student',   created_at:'2026-01-15' },
+  { id:4, username:'secretaire',  name:'Secrétaire ITP',      email:'secr@itp-university.cg',    role:'secretary', created_at:'2026-01-20' },
+  { id:5, username:'directeur',   name:'Directeur ITP',       email:'dir@itp-university.cg',     role:'direction', created_at:'2026-01-25' },
+  { id:6, username:'alice_mboka', name:"Alice M'BOKA",        email:'alice@itp-university.cg',   role:'student',   created_at:'2026-02-01' },
+  { id:7, username:'moussa_t',    name:'Moussa TRAORÉ',       email:'moussa@itp-university.cg',  role:'student',   created_at:'2026-02-05' },
+  { id:8, username:'prof_martin', name:'Prof. Martin IBARA',  email:'martin@itp-university.cg',  role:'professor', created_at:'2026-02-10' },
+];
+
+let allUsers = [...FB_USERS];
+let filtered = [...allUsers];
+let currentPage = 1;
+const PER_PAGE = 5;
+
+async function loadUsers() {
+  try {
+    const data = await ITP_API.students.getAll();
+    if (data?.data?.length) allUsers = data.data;
+  } catch {}
+  updateKPIs();
+  filterUsers();
+}
+
+function updateKPIs() {
+  document.getElementById('kpi-total').querySelector('.stat-val').textContent     = allUsers.length;
+  document.getElementById('kpi-students').querySelector('.stat-val').textContent  = allUsers.filter(u=>u.role==='student').length;
+  document.getElementById('kpi-professors').querySelector('.stat-val').textContent= allUsers.filter(u=>u.role==='professor').length;
+  document.getElementById('kpi-staff').querySelector('.stat-val').textContent     = allUsers.filter(u=>['secretary','direction','admin'].includes(u.role)).length;
+}
+
+function filterUsers() {
+  const q    = document.getElementById('search-users').value.toLowerCase();
+  const role = document.getElementById('filter-role').value;
+  filtered = allUsers.filter(u =>
+    (!q    || [u.name||'', u.email||'', u.username||''].some(v => v.toLowerCase().includes(q))) &&
+    (!role || u.role === role)
+  );
+  currentPage = 1;
+  renderPage();
+}
+
+function renderPage() {
+  const start = (currentPage - 1) * PER_PAGE;
+  const page  = filtered.slice(start, start + PER_PAGE);
+  document.getElementById('pagination-info').textContent =
+    `${start+1}–${Math.min(start+PER_PAGE, filtered.length)} sur ${filtered.length}`;
+  document.getElementById('prev-btn').disabled = currentPage === 1;
+  document.getElementById('next-btn').disabled = start + PER_PAGE >= filtered.length;
+
+  document.getElementById('users-table').innerHTML = page.map(u => `
+    <tr>
+      <td>
+        <div class="d-flex align-center gap-10">
+          <div style="width:36px;height:36px;border-radius:50%;background:${ROLE_COLORS[u.role]||'#999'};display:flex;align-items:center;justify-content:center;color:white;font-weight:bold;font-size:0.85rem;flex-shrink:0;">
+            ${(u.name||'?')[0].toUpperCase()}
+          </div>
+          <strong>${Security.sanitize(u.name||u.username||'—')}</strong>
+        </div>
+      </td>
+      <td><code style="font-size:0.85rem;">${Security.sanitize(u.username||'—')}</code></td>
+      <td class="text-muted-sm">${Security.sanitize(u.email||'—')}</td>
+      <td><span class="badge" style="background:${ROLE_COLORS[u.role]||'#999'};color:white;">${ROLE_LABELS[u.role]||u.role}</span></td>
+      <td class="text-muted-sm">${u.created_at ? new Date(u.created_at).toLocaleDateString('fr-FR') : '—'}</td>
+      <td>
+        <div class="d-flex gap-5">
+          <button class="btn-outline" style="padding:4px 10px;font-size:0.8rem;" onclick="editUser(${u.id})" aria-label="Modifier ${Security.sanitize(u.name||'')}"><i class="fas fa-edit"></i></button>
+          <button class="btn-danger" style="padding:4px 10px;font-size:0.8rem;" onclick="deleteUser(${u.id},'${Security.sanitize(u.name||u.username||'')}')" aria-label="Supprimer ${Security.sanitize(u.name||'')}"><i class="fas fa-trash"></i></button>
+        </div>
+      </td>
+    </tr>`).join('') || '<tr><td colspan="6" style="padding:20px;text-align:center;color:#999;">Aucun résultat.</td></tr>';
+}
+
+function changePage(dir) { currentPage += dir; renderPage(); }
+
+function openAddUser() {
+  Modal.show('Nouvel utilisateur',
+    `<div class="form-grid-2">
+      <div class="form-group"><label class="form-label">Nom complet</label><input id="u-name" class="form-control" required placeholder="Prénom Nom"></div>
+      <div class="form-group"><label class="form-label">Identifiant</label><input id="u-username" class="form-control" required placeholder="prenom_nom"></div>
+      <div class="form-group"><label class="form-label">Email</label><input type="email" id="u-email" class="form-control" required></div>
+      <div class="form-group"><label class="form-label">Rôle</label>
+        <select id="u-role" class="form-control">
+          <option value="student">Étudiant</option><option value="professor">Professeur</option>
+          <option value="secretary">Secrétariat</option><option value="direction">Direction</option><option value="admin">Admin</option>
+        </select>
+      </div>
+      <div class="form-group"><label class="form-label">Mot de passe</label><input type="password" id="u-pass" class="form-control" required placeholder="Min. 8 caractères" minlength="8"></div>
+      <div class="form-group"><label class="form-label">Confirmer</label><input type="password" id="u-pass2" class="form-control" required></div>
+    </div>`,
+    [{ label:'Créer', cls:'btn-primary', fn:'saveUser()' }, { label:'Annuler', cls:'btn-outline', fn:'Modal.close()' }]
+  );
+}
+
+async function saveUser() {
+  const name = document.getElementById('u-name')?.value?.trim();
+  const user = document.getElementById('u-username')?.value?.trim();
+  const email= document.getElementById('u-email')?.value?.trim();
+  const role = document.getElementById('u-role')?.value;
+  const pass = document.getElementById('u-pass')?.value;
+  const pass2= document.getElementById('u-pass2')?.value;
+
+  if (!name||!user||!email||!pass) { showToast('Remplissez tous les champs.','warning'); return; }
+  if (pass !== pass2)               { showToast('Les mots de passe ne correspondent pas.','error'); return; }
+  if (pass.length < 8)              { showToast('Mot de passe trop court (8 min).','warning'); return; }
+  if (allUsers.find(u => u.username === user)) { showToast('Cet identifiant existe déjà.','error'); return; }
+
+  try {
+    await ITP_API.students.create({ name, username: user, email, role, password: pass });
+  } catch {}
+
+  const newUser = { id: Date.now(), name, username: user, email, role, created_at: new Date().toISOString() };
+  allUsers.unshift(newUser);
+  updateKPIs();
+  filterUsers();
+  Modal.close();
+  showToast(`✅ Utilisateur "${name}" créé avec succès !`, 'success');
+  Security.log('user_created_ui', { name, role });
+}
+
+function editUser(id) {
+  const u = allUsers.find(u => u.id === id);
+  if (!u) return;
+  Modal.show(`Modifier — ${u.name}`,
+    `<div class="form-group"><label class="form-label">Nom complet</label><input id="e-name" class="form-control" value="${u.name||''}"></div>
+     <div class="form-group"><label class="form-label">Email</label><input type="email" id="e-email" class="form-control" value="${u.email||''}"></div>
+     <div class="form-group"><label class="form-label">Rôle</label>
+       <select id="e-role" class="form-control">
+         ${['student','professor','secretary','direction','admin'].map(r=>`<option value="${r}" ${r===u.role?'selected':''}>${ROLE_LABELS[r]}</option>`).join('')}
+       </select>
+     </div>`,
+    [{ label:'Enregistrer', cls:'btn-primary', fn:`updateUser(${id})` }, { label:'Annuler', cls:'btn-outline', fn:'Modal.close()' }]
+  );
+}
+
+async function updateUser(id) {
+  const name  = document.getElementById('e-name')?.value?.trim();
+  const email = document.getElementById('e-email')?.value?.trim();
+  const role  = document.getElementById('e-role')?.value;
+  try { await ITP_API.students.create({ id, name, email, role }); } catch {}
+  const idx = allUsers.findIndex(u => u.id === id);
+  if (idx >= 0) Object.assign(allUsers[idx], { name, email, role });
+  updateKPIs(); filterUsers(); Modal.close();
+  showToast('Utilisateur mis à jour ✅', 'success');
+}
+
+async function deleteUser(id, name) {
+  if (!confirm(`Supprimer "${name}" ? Cette action est irréversible.`)) return;
+  try { await fetch(`${ITP_CONFIG.apiBase()}/users/${id}`, { method:'DELETE', headers: ITP_CONFIG.authHeaders() }); } catch {}
+  allUsers = allUsers.filter(u => u.id !== id);
+  updateKPIs(); filterUsers();
+  showToast(`Utilisateur "${name}" supprimé.`, 'success');
+  Security.log('user_deleted_ui', { id, name });
+}
+
+loadUsers();
+</script>
+<script>if('serviceWorker' in navigator){navigator.serviceWorker.register('../sw.js').catch(()=>{})}</script>
+</body></html>

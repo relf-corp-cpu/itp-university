@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Permissions & Rôles — ITP University</title>
+  <link rel="stylesheet" href="../assets/css/style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  <link rel="manifest" href="../manifest.json">
+  <style>
+    .perm-table { width:100%; border-collapse:collapse; }
+    .perm-table th, .perm-table td { padding:10px 14px; text-align:center; border:1px solid var(--light-grey); }
+    .perm-table th:first-child, .perm-table td:first-child { text-align:left; min-width:200px; }
+    .perm-table thead th { background:var(--dark-blue); color:white; font-weight:600; font-size:0.85rem; }
+    .perm-table tbody tr:nth-child(even) { background:#f8f9fa; }
+    .perm-table tbody tr:hover { background:#edf2ff; }
+    .perm-check { width:20px; height:20px; cursor:pointer; accent-color:var(--dark-blue); }
+    .role-badge { display:inline-block; padding:3px 10px; border-radius:20px; font-size:0.78rem; font-weight:600; color:white; }
+    .section-label { background:#e8edf7; font-weight:700; color:var(--dark-blue); font-size:0.82rem; letter-spacing:0.04em; text-transform:uppercase; }
+    .changed-row { background:#fff8e1 !important; }
+  </style>
+</head>
+<body>
+<a href="#main-content" class="sr-only">Aller au contenu principal</a>
+
+<div class="dashboard-layout">
+  <aside class="sidebar" role="complementary" aria-label="Menu administrateur">
+    <h3>Administration</h3>
+    <nav role="navigation" aria-label="Navigation principale" style="display:flex;flex-direction:column;gap:10px;margin-top:20px;">
+      <a href="index.html"        class="nav-link"><i class="fas fa-chart-line"></i> Tableau de bord</a>
+      <a href="analytics.html"    class="nav-link"><i class="fas fa-chart-bar"></i> Analytique</a>
+      <a href="utilisateurs.html" class="nav-link"><i class="fas fa-users"></i> Utilisateurs</a>
+      <a href="academic.html"     class="nav-link"><i class="fas fa-graduation-cap"></i> Structure Académique</a>
+      <a href="logs.html"         class="nav-link"><i class="fas fa-history"></i> Journal</a>
+      <a href="parametres.html"   class="nav-link"><i class="fas fa-cog"></i> Paramètres</a>
+      <a href="permissions.html"  class="nav-link active"><i class="fas fa-shield-alt"></i> Permissions</a>
+      <a href="sauvegardes.html"  class="nav-link"><i class="fas fa-database"></i> Sauvegardes</a>
+      <a href="#" onclick="if(confirm('Se déconnecter ?')){localStorage.clear();window.location='../auth/login.html';}" class="nav-link">
+        <i class="fas fa-sign-out-alt"></i> Déconnexion
+      </a>
+    </nav>
+  </aside>
+
+  <main class="dashboard-main" id="main-content" role="main">
+
+    <div class="page-header">
+      <div>
+        <h2 class="page-title">Permissions & Rôles</h2>
+        <p class="text-muted-sm m-0">Contrôle d'accès par rôle — toute modification est journalisée</p>
+      </div>
+      <div class="d-flex gap-10">
+        <button class="btn-outline" onclick="resetAll()"><i class="fas fa-undo"></i> Réinitialiser</button>
+        <button class="btn-primary" id="save-btn" onclick="savePermissions()" disabled>
+          <i class="fas fa-save"></i> Enregistrer les modifications
+        </button>
+      </div>
+    </div>
+
+    <!-- Légende rôles -->
+    <div class="card mb-20 d-flex gap-10 flex-wrap align-center">
+      <span style="font-weight:600;font-size:0.88rem;">Rôles :</span>
+      <span class="role-badge" style="background:#1D3557;">Admin</span>
+      <span class="role-badge" style="background:#2a9d8f;">Direction</span>
+      <span class="role-badge" style="background:#457b9d;">Secrétariat</span>
+      <span class="role-badge" style="background:#e9c46a;color:#333;">Professeur</span>
+      <span class="role-badge" style="background:#e63946;">Étudiant</span>
+      <span style="margin-left:auto;font-size:0.82rem;color:#666;"><i class="fas fa-info-circle"></i> ✅ = accès autorisé · case cochée = modifiable</span>
+    </div>
+
+    <!-- Compteur de modifications -->
+    <div id="change-banner" class="card mb-20" style="background:#fff8e1;border-left:4px solid #f57c00;display:none;">
+      <span id="change-count" style="font-weight:600;color:#f57c00;"></span>
+      <span class="text-muted-sm"> modification(s) non enregistrée(s)</span>
+    </div>
+
+    <div class="card" style="padding:0;overflow:hidden;">
+      <div class="table-wrapper" style="overflow-x:auto;">
+        <table class="perm-table" role="table" aria-label="Matrice des permissions">
+          <thead>
+            <tr>
+              <th scope="col">Permission</th>
+              <th scope="col"><i class="fas fa-user-shield"></i><br>Admin</th>
+              <th scope="col"><i class="fas fa-building"></i><br>Direction</th>
+              <th scope="col"><i class="fas fa-user-tie"></i><br>Secrétariat</th>
+              <th scope="col"><i class="fas fa-chalkboard-teacher"></i><br>Professeur</th>
+              <th scope="col"><i class="fas fa-user-graduate"></i><br>Étudiant</th>
+            </tr>
+          </thead>
+          <tbody id="perm-body"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Historique des modifications -->
+    <div class="card mt-30">
+      <h3 class="mb-15"><i class="fas fa-history"></i> Historique des modifications de permissions</h3>
+      <div id="audit-log">
+        <table class="data-table" role="table" aria-label="Audit des permissions">
+          <thead><tr><th>Date</th><th>Admin</th><th>Permission</th><th>Rôle</th><th>Ancien</th><th>Nouveau</th></tr></thead>
+          <tbody id="audit-body"></tbody>
+        </table>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<script src="../assets/js/main.js"></script>
+<script src="../assets/js/config.js"></script>
+<script src="../assets/js/api.js"></script>
+<script src="../assets/js/utils.js"></script>
+<script src="../assets/js/auth-guard.js" data-role="admin"></script>
+<script src="../assets/js/tests.js"></script>
+<script src="../assets/js/components.js"></script>
+<script>
+// ── Matrice de permissions ────────────────────────────────────────────────────
+const ROLES = ['admin','direction','secretary','professor','student'];
+const ROLE_LABELS = {
+  admin:'Admin', direction:'Direction', secretary:'Secrétariat',
+  professor:'Professeur', student:'Étudiant'
+};
+
+// Structure : [section, permission_key, label, [admin, direction, secretary, professor, student], [editable par admin]]
+const PERMISSIONS = [
+  // Étudiants
+  ['Gestion Étudiants', null, null, null, null],
+  ['Gestion Étudiants','students.view',       'Voir la liste des étudiants',          [1,1,1,1,0], [0,1,1,1,1]],
+  ['Gestion Étudiants','students.create',      'Créer un étudiant',                    [1,1,1,0,0], [0,1,1,1,1]],
+  ['Gestion Étudiants','students.edit',        'Modifier un dossier étudiant',         [1,1,1,0,0], [0,1,1,1,1]],
+  ['Gestion Étudiants','students.delete',      'Supprimer un étudiant',                [1,0,0,0,0], [0,1,1,1,1]],
+  ['Gestion Étudiants','students.export',      'Exporter la liste (CSV/Excel)',         [1,1,1,0,0], [0,1,1,1,1]],
+  // Notes
+  ['Notes & Évaluations', null, null, null, null],
+  ['Notes & Évaluations','grades.view',        'Voir les notes (toutes)',               [1,1,1,0,0], [0,1,1,1,1]],
+  ['Notes & Évaluations','grades.own',         'Voir ses propres notes',                [1,1,1,1,1], [0,0,0,0,0]],
+  ['Notes & Évaluations','grades.create',      'Saisir des notes',                     [1,1,0,1,0], [0,1,1,1,1]],
+  ['Notes & Évaluations','grades.validate',    'Valider officiellement les notes',      [1,1,0,0,0], [0,1,1,1,1]],
+  ['Notes & Évaluations','grades.bulletin',    'Générer un bulletin de notes',          [1,1,1,1,1], [0,1,1,1,1]],
+  // Paiements
+  ['Finance & Paiements', null, null, null, null],
+  ['Finance & Paiements','payments.view',      'Voir tous les paiements',              [1,1,1,0,0], [0,1,1,1,1]],
+  ['Finance & Paiements','payments.own',       'Voir ses propres paiements',           [1,1,1,1,1], [0,0,0,0,0]],
+  ['Finance & Paiements','payments.create',    'Enregistrer un paiement',              [1,1,1,0,0], [0,1,1,1,1]],
+  ['Finance & Paiements','payments.validate',  'Valider un paiement',                  [1,1,1,0,0], [0,1,1,1,1]],
+  ['Finance & Paiements','payments.refund',    'Rembourser un paiement',               [1,0,0,0,0], [0,1,1,1,1]],
+  // Présences
+  ['Présences', null, null, null, null],
+  ['Présences','attendance.view',              'Voir les présences (toutes)',           [1,1,1,0,0], [0,1,1,1,1]],
+  ['Présences','attendance.mark',              'Pointer les présences',                 [1,0,0,1,0], [0,1,1,1,1]],
+  ['Présences','attendance.justify',           'Justifier une absence',                 [1,1,1,0,0], [0,1,1,1,1]],
+  // Bibliothèque
+  ['Bibliothèque', null, null, null, null],
+  ['Bibliothèque','library.view',              'Voir le catalogue',                     [1,1,1,1,1], [0,0,0,0,0]],
+  ['Bibliothèque','library.borrow',            'Emprunter un livre',                    [1,1,1,1,1], [0,1,1,1,1]],
+  ['Bibliothèque','library.manage',            'Gérer le catalogue (CRUD)',             [1,1,1,0,0], [0,1,1,1,1]],
+  ['Bibliothèque','library.fines',             'Gérer les amendes',                     [1,1,1,0,0], [0,1,1,1,1]],
+  // Documents
+  ['Documents & Attestations', null, null, null, null],
+  ['Documents & Attestations','docs.request',  'Demander un document',                 [1,1,1,1,1], [0,0,0,0,0]],
+  ['Documents & Attestations','docs.deliver',  'Délivrer un document',                 [1,1,1,0,0], [0,1,1,1,1]],
+  // Délibérations
+  ['Délibérations', null, null, null, null],
+  ['Délibérations','delib.run',               'Lancer une délibération',               [1,1,0,0,0], [0,1,1,1,1]],
+  ['Délibérations','delib.validate',          'Valider les résultats définitifs',       [1,1,0,0,0], [0,1,1,1,1]],
+  ['Délibérations','delib.pv',               'Générer le PV officiel',                 [1,1,0,0,0], [0,1,1,1,1]],
+  // Administration
+  ['Administration système', null, null, null, null],
+  ['Administration système','admin.users',     'Gérer les utilisateurs',               [1,0,0,0,0], [0,1,1,1,1]],
+  ['Administration système','admin.settings',  'Modifier les paramètres',              [1,0,0,0,0], [0,1,1,1,1]],
+  ['Administration système','admin.logs',      'Voir les journaux système',            [1,1,0,0,0], [0,1,1,1,1]],
+  ['Administration système','admin.backup',    'Créer des sauvegardes',                [1,0,0,0,0], [0,1,1,1,1]],
+  ['Administration système','admin.permissions','Modifier les permissions',            [1,0,0,0,0], [0,1,1,1,1]],
+];
+
+// État courant (chargé depuis localStorage ou défaut)
+let currentPerms = JSON.parse(localStorage.getItem('itp_permissions') || 'null');
+if (!currentPerms) {
+  currentPerms = {};
+  PERMISSIONS.forEach(row => {
+    if (!row[1]) return;
+    currentPerms[row[1]] = [...row[3]];
+  });
+}
+
+let originalPerms = JSON.parse(JSON.stringify(currentPerms));
+let auditLog      = JSON.parse(localStorage.getItem('itp_perm_audit') || '[]');
+let pendingChanges = 0;
+
+// ── Rendu de la matrice ───────────────────────────────────────────────────────
+function renderMatrix() {
+  let currentSection = null;
+  let html = '';
+
+  PERMISSIONS.forEach((row, idx) => {
+    const [section, key, label, defaults, editable] = row;
+    if (!key) {
+      // Ligne section
+      if (section !== currentSection) {
+        currentSection = section;
+        html += `<tr class="section-label"><td colspan="6"><i class="fas fa-folder-open" style="margin-right:6px;"></i>${section}</td></tr>`;
+      }
+      return;
+    }
+
+    const vals = currentPerms[key] || defaults;
+    const orig = originalPerms[key] || defaults;
+    const changed = vals.some((v,i) => v !== (orig[i]||defaults[i]));
+
+    html += `<tr class="${changed ? 'changed-row' : ''}" id="row-${key.replace(/\./g,'-')}">
+      <td style="text-align:left;">
+        <span style="font-size:0.88rem;">${Security ? Security.sanitize(label) : label}</span>
+        <code class="fs-xs" style="display:block;color:#999;margin-top:2px;">${key}</code>
+      </td>`;
+
+    ROLES.forEach((role, ri) => {
+      const checked  = vals[ri] ? 'checked' : '';
+      const isEditable = ri === 0 ? false : (editable[ri] === 1); // admin toujours activé, non modifiable
+      const isAdmin  = ri === 0;
+
+      if (isAdmin) {
+        // Admin : toujours coché, non modifiable
+        html += `<td><input type="checkbox" class="perm-check" checked disabled title="L'admin a toujours accès"></td>`;
+      } else if (isEditable) {
+        html += `<td><input type="checkbox" class="perm-check" ${checked} 
+                   onchange="togglePerm('${key}',${ri},this.checked)"
+                   aria-label="${label} — ${ROLE_LABELS[role]}"></td>`;
+      } else {
+        // Non modifiable par l'admin
+        html += `<td><span style="color:${vals[ri]?'#28a745':'#ccc'};font-size:1.1rem;">${vals[ri]?'✓':'✗'}</span></td>`;
+      }
+    });
+
+    html += '</tr>';
+  });
+
+  document.getElementById('perm-body').innerHTML = html;
+  renderAuditLog();
+}
+
+function togglePerm(key, roleIdx, value) {
+  const old = currentPerms[key][roleIdx];
+  currentPerms[key][roleIdx] = value ? 1 : 0;
+
+  // Compter les changements vs original
+  pendingChanges = 0;
+  Object.keys(currentPerms).forEach(k => {
+    const orig = originalPerms[k];
+    currentPerms[k].forEach((v,i) => { if(v !== orig[i]) pendingChanges++; });
+  });
+
+  document.getElementById('save-btn').disabled = pendingChanges === 0;
+  document.getElementById('change-banner').style.display = pendingChanges > 0 ? 'block' : 'none';
+  document.getElementById('change-count').textContent = pendingChanges;
+
+  // Marquer la ligne
+  const rowEl = document.getElementById('row-'+key.replace(/\./g,'-'));
+  const orig = originalPerms[key];
+  const changed = currentPerms[key].some((v,i) => v !== orig[i]);
+  if (rowEl) rowEl.className = changed ? 'changed-row' : '';
+
+  Security.log('perm_changed_pending', {key, role: ROLES[roleIdx], value});
+}
+
+function savePermissions() {
+  // Construire l'audit
+  const now = new Date().toLocaleString('fr-FR');
+  const admin = JSON.parse(localStorage.getItem('itp_user') || '{}').name || 'Admin';
+
+  Object.keys(currentPerms).forEach(key => {
+    const orig = originalPerms[key];
+    currentPerms[key].forEach((v, ri) => {
+      if (v !== orig[ri]) {
+        auditLog.unshift({
+          date: now, admin, permission: key,
+          role: ROLE_LABELS[ROLES[ri]],
+          old: orig[ri] ? '✓ Autorisé' : '✗ Refusé',
+          new: v       ? '✓ Autorisé' : '✗ Refusé',
+        });
+      }
+    });
+  });
+
+  // Sauvegarder
+  localStorage.setItem('itp_permissions', JSON.stringify(currentPerms));
+  localStorage.setItem('itp_perm_audit', JSON.stringify(auditLog.slice(0, 50)));
+  originalPerms = JSON.parse(JSON.stringify(currentPerms));
+
+  pendingChanges = 0;
+  document.getElementById('save-btn').disabled = true;
+  document.getElementById('change-banner').style.display = 'none';
+
+  Security.log('permissions_saved', {changes: auditLog.length});
+  showToast('✅ Permissions enregistrées et journalisées.', 'success', 3000);
+  renderMatrix();
+}
+
+function resetAll() {
+  if (!confirm('Réinitialiser toutes les permissions aux valeurs par défaut ?')) return;
+  currentPerms = {};
+  PERMISSIONS.forEach(row => {
+    if (!row[1]) return;
+    currentPerms[row[1]] = [...row[3]];
+  });
+  originalPerms = JSON.parse(JSON.stringify(currentPerms));
+  pendingChanges = 0;
+  document.getElementById('save-btn').disabled = true;
+  document.getElementById('change-banner').style.display = 'none';
+  localStorage.removeItem('itp_permissions');
+  renderMatrix();
+  showToast('🔄 Permissions réinitialisées.', 'info');
+  Security.log('permissions_reset');
+}
+
+function renderAuditLog() {
+  const body = document.getElementById('audit-body');
+  if (!body) return;
+  if (!auditLog.length) {
+    body.innerHTML = '<tr><td colspan="6" class="text-center text-muted-sm" style="padding:15px;">Aucune modification enregistrée.</td></tr>';
+    return;
+  }
+  body.innerHTML = auditLog.slice(0, 20).map(e => `<tr>
+    <td class="text-muted-sm">${e.date}</td>
+    <td>${e.admin}</td>
+    <td><code class="fs-xs">${e.permission}</code></td>
+    <td>${e.role}</td>
+    <td style="color:#e63946;">${e.old}</td>
+    <td style="color:#28a745;">${e.new}</td>
+  </tr>`).join('');
+}
+
+// Init
+renderMatrix();
+</script>
+<script>if('serviceWorker' in navigator){navigator.serviceWorker.register('../sw.js').catch(()=>{})}</script>
+</body>
+</html>

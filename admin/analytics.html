@@ -1,0 +1,219 @@
+<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Analytique — ITP University</title>
+<link rel="stylesheet" href="../assets/css/style.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+<link rel="manifest" href="../manifest.json"></head><body>
+<a href="#main-content" class="sr-only">Aller au contenu principal</a>
+<div class="dashboard-layout">
+<aside class="sidebar" role="complementary">
+  <h3>Administration</h3>
+      <nav role="navigation" aria-label="Navigation principale" style="display:flex;flex-direction:column;gap:10px;margin-top:20px;">
+    <a href="index.html"        class="nav-link"><i class="fas fa-chart-line"></i> Tableau de bord</a>
+    <a href="analytics.html"    class="nav-link"><i class="fas fa-chart-bar"></i> Analytique</a>
+    <a href="utilisateurs.html" class="nav-link"><i class="fas fa-users"></i> Utilisateurs</a>
+    <a href="academic.html"     class="nav-link"><i class="fas fa-graduation-cap"></i> Structure Académique</a>
+    <a href="logs.html"         class="nav-link"><i class="fas fa-history"></i> Journal</a>
+    <a href="parametres.html"   class="nav-link"><i class="fas fa-cog"></i> Paramètres</a>
+    <a href="permissions.html"  class="nav-link"><i class="fas fa-shield-alt"></i> Permissions</a>
+    <a href="sauvegardes.html"  class="nav-link"><i class="fas fa-database"></i> Sauvegardes</a>
+    <a href="#" onclick="if(confirm('Se déconnecter ?')){localStorage.clear();window.location='../auth/login.html';}" class="nav-link"><i class="fas fa-sign-out-alt"></i> Déconnexion</a>
+  </nav>
+</aside>
+<main class="dashboard-main" id="main-content" role="main">
+  <div class="page-header">
+    <div>
+      <h2 class="page-title">Tableau de Bord Analytique</h2>
+      <p class="text-muted-sm m-0" id="last-update"></p>
+    </div>
+    <div class="d-flex gap-10">
+      <select id="year-filter" class="form-control" style="width:auto;" onchange="loadAll()" aria-label="Année">
+        <option>2025-2026</option><option>2024-2025</option>
+      </select>
+      <button class="btn-outline" onclick="exportAll()"><i class="fas fa-file-excel"></i> Export</button>
+      <button class="btn-primary" onclick="loadAll()"><i class="fas fa-sync"></i> Actualiser</button>
+    </div>
+  </div>
+
+  <!-- KPIs -->
+  <div class="kpi-row mb-30">
+    <div class="stat-card" style="border-left-color:#1D3557;"><p class="stat-label">Total Étudiants</p><div id="kpi-total" class="stat-val">—</div><p class="text-muted-sm m-0 fs-xs" id="kpi-delta"></p></div>
+    <div class="stat-card" style="border-left-color:#28a745;"><p class="stat-label">Taux de réussite</p><div id="kpi-success" class="stat-val">—</div></div>
+    <div class="stat-card" style="border-left-color:#f57c00;"><p class="stat-label">Revenus (année)</p><div id="kpi-revenue" class="stat-val">—</div></div>
+    <div class="stat-card" style="border-left-color:var(--red-itp);"><p class="stat-label">Taux de présence</p><div id="kpi-presence" class="stat-val">—</div></div>
+    <div class="stat-card" style="border-left-color:#2a9d8f;"><p class="stat-label">Livres empruntés</p><div id="kpi-loans" class="stat-val">—</div></div>
+    <div class="stat-card" style="border-left-color:#9c27b0;"><p class="stat-label">Nouveaux étudiants</p><div id="kpi-new" class="stat-val">—</div></div>
+  </div>
+
+  <!-- Graphiques rang 1 -->
+  <div class="grid-2 mb-30">
+    <div class="card">
+      <div class="d-flex justify-between align-center mb-15">
+        <h3 class="m-0">Inscriptions par mois</h3>
+        <span class="badge badge-info">2025-2026</span>
+      </div>
+      <div id="bars-inscriptions" style="height:180px;display:flex;align-items:flex-end;gap:5px;"></div>
+      <div id="labels-inscriptions" class="d-flex justify-between mt-5" style="font-size:0.73rem;color:#888;"></div>
+    </div>
+    <div class="card">
+      <div class="d-flex justify-between align-center mb-15">
+        <h3 class="m-0">Répartition par filière</h3>
+      </div>
+      <div class="d-flex align-center justify-center gap-20" style="height:200px;">
+        <div id="pie-chart" style="width:160px;height:160px;border-radius:50%;flex-shrink:0;"></div>
+        <div id="pie-legend" style="font-size:0.83rem;"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Graphiques rang 2 -->
+  <div class="grid-2 mb-30">
+    <div class="card">
+      <div class="d-flex justify-between align-center mb-15">
+        <h3 class="m-0">Évolution des moyennes</h3>
+        <select id="grade-filter" class="form-control" style="width:auto;font-size:0.82rem;" onchange="renderGrades()" aria-label="Cours">
+          <option value="all">Toutes matières</option>
+          <option value="algo">Algorithmique</option>
+          <option value="bdd">Base de données</option>
+          <option value="web">Développement Web</option>
+        </select>
+      </div>
+      <div id="grade-bars" style="height:170px;display:flex;align-items:flex-end;gap:8px;"></div>
+    </div>
+    <div class="card">
+      <div class="d-flex justify-between align-center mb-15">
+        <h3 class="m-0">Revenus par méthode</h3>
+      </div>
+      <div id="payment-bars" style="height:170px;display:flex;align-items:flex-end;gap:20px;justify-content:center;"></div>
+      <div id="payment-legend" class="d-flex justify-center gap-20 mt-10" style="font-size:0.82rem;"></div>
+    </div>
+  </div>
+
+  <!-- Performance matières -->
+  <div class="card mb-30">
+    <div class="d-flex justify-between align-center mb-20">
+      <h3 class="m-0">Performance par matière</h3>
+      <button class="btn-outline" onclick="exportPerf()"><i class="fas fa-file-excel"></i> Export</button>
+    </div>
+    <div class="table-wrapper">
+      <table class="data-table" role="table">
+        <thead><tr><th>Matière</th><th>Moy. classe</th><th>Min</th><th>Max</th><th>% Admis</th><th>% Compens.</th><th>% Ajourné</th></tr></thead>
+        <tbody id="perf-table"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Présences -->
+  <div class="card">
+    <h3 class="mb-20">Taux de présence par cours</h3>
+    <div id="presence-bars" style="display:flex;flex-direction:column;gap:14px;"></div>
+  </div>
+</main>
+</div>
+<script src="../assets/js/main.js"></script>
+<script src="../assets/js/config.js"></script>
+<script src="../assets/js/api.js"></script>
+<script src="../assets/js/utils.js"></script>
+<script src="../assets/js/auth-guard.js" data-role="admin,direction"></script>
+<script src="../assets/js/tests.js"></script>
+<script src="../assets/js/components.js"></script>
+<script>
+const D_INSCR = { labels:['Oct','Nov','Déc','Jan','Fév','Mar','Avr','Mai','Jun'], values:[120,145,148,152,160,168,175,200,245] };
+const D_FIL   = [{name:'Génie Logiciel',count:490,color:'#1D3557'},{name:'Réseaux & Télécoms',count:380,color:'#e63946'},{name:'Cybersécurité',count:220,color:'#2a9d8f'},{name:'Web & Multimédia',count:155,color:'#e9c46a'}];
+const D_GRADE = { all:[12.8,13.2,14.1,11.9,13.5,15.2,12.4,14.8,13.0], algo:[12.1,12.5,13.2,11.0,12.8,14.1,11.5,13.9,12.2], bdd:[13.5,14.0,15.1,12.8,14.2,16.0,13.1,15.4,13.8], web:[14.2,14.8,15.9,13.5,15.0,16.5,14.0,16.1,14.5] };
+const D_PAY   = [{method:'MTN',total:18500000,count:142,color:'#ffcc00'},{method:'Airtel',total:12300000,count:98,color:'#e63946'},{method:'Cash',total:4200000,count:35,color:'#2a9d8f'}];
+const D_PERF  = [{course:'Algorithmique',avg:12.6,min:7.2,max:18.5,admis:68,comp:18,aj:14},{course:'Base de données',avg:14.1,min:8.5,max:19.0,admis:82,comp:10,aj:8},{course:'Développement Web',avg:13.8,min:9.0,max:18.5,admis:78,comp:12,aj:10},{course:'Mathématiques',avg:10.9,min:4.5,max:17.5,admis:55,comp:25,aj:20},{course:'Réseaux Mobiles',avg:12.1,min:6.0,max:17.0,admis:65,comp:20,aj:15}];
+const D_PRES  = [{course:'Algorithmique',rate:85},{course:'Base de données',rate:92},{course:'Développement Web',rate:88},{course:'Mathématiques',rate:78},{course:'Réseaux Mobiles',rate:81}];
+
+function bars(id, labels, values, color) {
+  const el=document.getElementById(id); if(!el) return;
+  const max=Math.max(...values);
+  el.innerHTML=values.map((v,i)=>`<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;">
+    <span style="font-size:0.7rem;color:#666;font-weight:bold;">${v}</span>
+    <div style="width:100%;background:${color};border-radius:3px 3px 0 0;height:${Math.round((v/max)*155)}px;transition:height 0.5s;cursor:pointer;"
+      onmouseover="this.style.opacity='.7'" onmouseout="this.style.opacity='1'" title="${labels[i]}: ${v}"></div>
+  </div>`).join('');
+}
+
+function renderInscr() {
+  bars('bars-inscriptions', D_INSCR.labels, D_INSCR.values, '#1D3557');
+  document.getElementById('labels-inscriptions').innerHTML = D_INSCR.labels.map(l=>`<span>${l}</span>`).join('');
+}
+
+function renderPie() {
+  const total=D_FIL.reduce((s,f)=>s+f.count,0);
+  let c=0;
+  const grad=D_FIL.map(f=>{ const p=(f.count/total*100).toFixed(1),from=c; c+=parseFloat(p); return `${f.color} ${from.toFixed(1)}% ${c.toFixed(1)}%`; }).join(',');
+  document.getElementById('pie-chart').style.background=`conic-gradient(${grad})`;
+  document.getElementById('pie-legend').innerHTML=D_FIL.map(f=>`<p style="margin:5px 0;display:flex;align-items:center;gap:8px;">
+    <span style="width:12px;height:12px;border-radius:2px;background:${f.color};display:inline-block;"></span>
+    ${f.name} <strong>(${(f.count/total*100).toFixed(0)}%)</strong></p>`).join('');
+}
+
+function renderGrades() {
+  const key=document.getElementById('grade-filter').value;
+  const vs=D_GRADE[key], months=['Oct','Nov','Déc','Jan','Fév','Mar','Avr','Mai','Jun'];
+  document.getElementById('grade-bars').innerHTML=vs.map((v,i)=>`<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;">
+    <span style="font-size:0.7rem;color:#555;">${v.toFixed(1)}</span>
+    <div style="width:100%;background:${v>=14?'#28a745':v>=12?'#2196F3':v>=10?'#f57c00':'#e63946'};border-radius:3px 3px 0 0;height:${Math.round((v/20)*155)}px;transition:height 0.5s;"></div>
+    <span style="font-size:0.7rem;color:#888;">${months[i]}</span>
+  </div>`).join('');
+}
+
+function renderPay() {
+  const max=Math.max(...D_PAY.map(p=>p.total));
+  document.getElementById('payment-bars').innerHTML=D_PAY.map(p=>`<div style="display:flex;flex-direction:column;align-items:center;gap:5px;flex:1;">
+    <span style="font-size:0.78rem;color:#555;font-weight:bold;">${(p.total/1e6).toFixed(1)}M</span>
+    <div style="width:55%;background:${p.color};border-radius:6px 6px 0 0;height:${Math.round((p.total/max)*155)}px;min-width:45px;"></div>
+    <span style="font-size:0.8rem;font-weight:bold;">${p.method}</span>
+  </div>`).join('');
+  document.getElementById('payment-legend').innerHTML=D_PAY.map(p=>`<span><i class="fas fa-square" style="color:${p.color};"></i> ${p.method} (${p.count})</span>`).join('');
+}
+
+function renderPerf() {
+  document.getElementById('perf-table').innerHTML=D_PERF.map(d=>`<tr>
+    <td><strong>${d.course}</strong></td>
+    <td style="font-weight:bold;color:${d.avg>=12?'#28a745':'#f57c00'};">${d.avg}/20</td>
+    <td class="text-muted-sm">${d.min}</td><td class="text-muted-sm">${d.max}</td>
+    <td><span class="badge badge-success">${d.admis}%</span></td>
+    <td><span class="badge badge-warning">${d.comp}%</span></td>
+    <td><span class="badge badge-danger">${d.aj}%</span></td>
+  </tr>`).join('');
+}
+
+function renderPres() {
+  document.getElementById('presence-bars').innerHTML=D_PRES.map(p=>`<div>
+    <div class="d-flex justify-between mb-5">
+      <span style="font-size:0.88rem;">${p.course}</span>
+      <strong style="color:${p.rate>=85?'#28a745':p.rate>=75?'#f57c00':'#e63946'};">${p.rate}%</strong>
+    </div>
+    <div class="progress">
+      <div class="progress-bar" style="width:${p.rate}%;background:${p.rate>=85?'#28a745':p.rate>=75?'#f57c00':'#e63946'};transition:width 0.8s;"></div>
+    </div>
+  </div>`).join('');
+}
+
+async function loadAll() {
+  document.getElementById('last-update').textContent='Mis à jour : '+new Date().toLocaleString('fr-FR');
+  try {
+    const s=await ITP_API.admin.dashboard();
+    document.getElementById('kpi-total').textContent   =(s.students||1245).toLocaleString('fr-FR');
+    document.getElementById('kpi-revenue').textContent =Math.round((s.revenue_year||35e6)/1e6)+'M FCFA';
+  } catch {
+    document.getElementById('kpi-total').textContent   ='1 245';
+    document.getElementById('kpi-revenue').textContent ='35M FCFA';
+  }
+  document.getElementById('kpi-delta').textContent  ='↑ +45 vs année précédente';
+  document.getElementById('kpi-success').textContent='78%';
+  document.getElementById('kpi-presence').textContent='85%';
+  document.getElementById('kpi-loans').textContent  ='312';
+  document.getElementById('kpi-new').textContent    ='245';
+  renderInscr(); renderPie(); renderGrades(); renderPay(); renderPerf(); renderPres();
+}
+
+function exportAll()  { Excel.exportCSV(D_PERF.map(d=>({Matière:d.course,Moyenne:d.avg,Admis:d.admis+'%',Ajourné:d.aj+'%'})),'analytics_itp.csv'); }
+function exportPerf() { Excel.exportCSV(D_PERF.map(d=>({Matière:d.course,Moy:d.avg,Min:d.min,Max:d.max,Admis:d.admis+'%'})),'performance_matieres.csv'); }
+
+loadAll();
+</script>
+<script>if('serviceWorker' in navigator){navigator.serviceWorker.register('../sw.js').catch(()=>{})}</script>
+</body></html>

@@ -1,0 +1,187 @@
+<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Mon Emploi du Temps — ITP University</title>
+<link rel="stylesheet" href="../assets/css/style.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+<link rel="icon" href="../assets/images/icon-192.png">
+<link rel="manifest" href="../manifest.json"></head><body>
+<a href="#main-content" class="sr-only">Aller au contenu principal</a>
+<div class="dashboard-layout">
+<aside class="sidebar" role="complementary">
+  <h3>Espace Professeur</h3>
+    <nav role="navigation" aria-label="Navigation principale" style="display:flex;flex-direction:column;gap:10px;margin-top:20px;">
+    <a href="index.html"     class="nav-link"><i class="fas fa-home"></i> Tableau de bord</a>
+    <a href="notes.html"     class="nav-link"><i class="fas fa-edit"></i> Gestion des Notes</a>
+    <a href="presences.html" class="nav-link"><i class="fas fa-user-check"></i> Présences</a>
+    <a href="edt.html"       class="nav-link"><i class="fas fa-calendar-alt"></i> Mon EDT</a>
+    <a href="supports.html"  class="nav-link"><i class="fas fa-folder-open"></i> Supports de cours</a>
+    <a href="#" onclick="if(confirm('Se déconnecter ?')){localStorage.clear();window.location='../auth/login.html';}" class="nav-link"><i class="fas fa-sign-out-alt"></i> Déconnexion</a>
+  </nav>
+</aside>
+<main class="dashboard-main" id="main-content" role="main">
+  <div class="page-header">
+    <div>
+      <h2 class="page-title">Mon Emploi du Temps</h2>
+      <p class="text-muted-sm m-0" id="prof-name-display">Chargement...</p>
+    </div>
+    <div class="d-flex gap-10">
+      <button onclick="prevWeek()" class="btn-outline"><i class="fas fa-chevron-left"></i></button>
+      <span id="week-label" style="font-weight:bold;min-width:220px;text-align:center;padding:8px 0;"></span>
+      <button onclick="nextWeek()" class="btn-outline"><i class="fas fa-chevron-right"></i></button>
+      <button onclick="goToday()"  class="btn-primary">Aujourd'hui</button>
+    </div>
+  </div>
+
+  <!-- Stats semaine -->
+  <div class="kpi-row mb-30">
+    <div class="stat-card" style="border-left-color:var(--dark-blue);">
+      <p class="stat-label">Cours cette semaine</p>
+      <div id="kpi-cours" class="stat-val">—</div>
+    </div>
+    <div class="stat-card" style="border-left-color:#28a745;">
+      <p class="stat-label">Heures de cours</p>
+      <div id="kpi-heures" class="stat-val">—</div>
+    </div>
+    <div class="stat-card" style="border-left-color:#e9c46a;">
+      <p class="stat-label">Groupes/Classes</p>
+      <div class="stat-val">3</div>
+    </div>
+    <div class="stat-card" style="border-left-color:var(--red-itp);">
+      <p class="stat-label">Prochaine séance</p>
+      <div id="kpi-next" class="stat-val" style="font-size:1rem;">—</div>
+    </div>
+  </div>
+
+  <!-- Grille calendrier -->
+  <div class="card mb-30" style="padding:0;overflow:hidden;">
+    <div style="display:grid;grid-template-columns:80px repeat(5,1fr);background:var(--dark-blue);color:white;">
+      <div style="padding:12px;text-align:center;font-size:0.8rem;">Heure</div>
+      <div id="head-lun" style="padding:12px;text-align:center;font-size:0.85rem;"></div>
+      <div id="head-mar" style="padding:12px;text-align:center;font-size:0.85rem;"></div>
+      <div id="head-mer" style="padding:12px;text-align:center;font-size:0.85rem;"></div>
+      <div id="head-jeu" style="padding:12px;text-align:center;font-size:0.85rem;"></div>
+      <div id="head-ven" style="padding:12px;text-align:center;font-size:0.85rem;"></div>
+    </div>
+    <div id="edt-grid" style="display:grid;grid-template-columns:80px repeat(5,1fr);min-height:450px;"></div>
+  </div>
+
+  <!-- Liste vue semaine -->
+  <div class="card">
+    <h3 class="mb-15">Détail des séances</h3>
+    <div id="week-list"></div>
+  </div>
+</main>
+</div>
+
+<script src="../assets/js/main.js"></script>
+<script src="../assets/js/config.js"></script>
+<script src="../assets/js/api.js"></script>
+<script src="../assets/js/utils.js"></script>
+<script src="../assets/js/auth-guard.js" data-role="professor,admin"></script>
+<script src="../assets/js/tests.js"></script>
+<script src="../assets/js/components.js"></script>
+<script>
+const JOURS  = ['Lundi','Mardi','Mercredi','Jeudi','Vendredi'];
+const HOURS  = ['07:00','08:00','09:00','10:00','11:00','12:00','13:00','14:00','15:00','16:00','17:00'];
+const COLORS = ['#1D3557','#e63946','#2a9d8f','#e9c46a','#457b9d','#264653'];
+
+const PROF_SCHEDULE = [
+  { id:1, course:'Algorithmique',    class:'L3 GL', room:'Salle 101', day:1, start:'08:00', end:'10:00', students:45, color:COLORS[0] },
+  { id:2, course:'Base de données',  class:'L2 GL', room:'Salle 204', day:2, start:'14:00', end:'16:00', students:38, color:COLORS[1] },
+  { id:3, course:'Développement Web',class:'L3 GL', room:'Salle 204', day:3, start:'10:00', end:'12:00', students:40, color:COLORS[2] },
+  { id:4, course:'Algorithmique',    class:'L2 GL', room:'Salle 101', day:4, start:'08:00', end:'10:00', students:45, color:COLORS[0] },
+  { id:5, course:'Base de données TP',class:'L3 GL',room:'Salle Machine',day:5,start:'14:00',end:'17:00',students:20, color:COLORS[1] },
+];
+
+let weekOffset = 0;
+
+function getWeekDates(offset=0) {
+  const now=new Date(), day=now.getDay()||7, mon=new Date(now);
+  mon.setDate(now.getDate()-day+1+offset*7);
+  return Array.from({length:5},(_,i)=>{ const d=new Date(mon); d.setDate(mon.getDate()+i); return d; });
+}
+
+function renderHeaders(dates) {
+  const ids=['lun','mar','mer','jeu','ven'];
+  const today=new Date().toDateString();
+  dates.forEach((d,i)=>{
+    const el=document.getElementById(`head-${ids[i]}`);
+    el.innerHTML=`<strong>${JOURS[i]}</strong><br><small style="opacity:0.8;">${d.getDate()}/${d.getMonth()+1}</small>`;
+    el.style.background=d.toDateString()===today?'rgba(255,255,255,0.2)':'';
+  });
+  const fmt=d=>`${d.getDate()}/${d.getMonth()+1}/${d.getFullYear()}`;
+  document.getElementById('week-label').textContent=`${fmt(dates[0])} — ${fmt(dates[4])}`;
+}
+
+function renderGrid(slots) {
+  const grid=document.getElementById('edt-grid');
+  grid.innerHTML='';
+  HOURS.forEach(h=>{
+    const tc=document.createElement('div');
+    tc.style.cssText='padding:4px 8px;font-size:0.75rem;color:#999;border-top:1px solid #eee;border-right:1px solid #eee;display:flex;align-items:flex-start;';
+    tc.textContent=h; grid.appendChild(tc);
+    for(let day=1;day<=5;day++){
+      const cell=document.createElement('div');
+      cell.style.cssText='border-top:1px solid #eee;border-right:1px solid #eee;min-height:50px;padding:2px;position:relative;';
+      const slot=slots.find(s=>s.day===day&&s.start===h);
+      if(slot){
+        const [sh,sm]=slot.start.split(':').map(Number);
+        const [eh,em]=slot.end.split(':').map(Number);
+        const durH=(eh*60+em-sh*60-sm)/60;
+        const bl=document.createElement('div');
+        bl.style.cssText=`background:${slot.color};color:white;border-radius:5px;padding:6px 8px;font-size:0.72rem;cursor:pointer;min-height:${durH*50-6}px;`;
+        bl.innerHTML=`<strong>${slot.course}</strong><br>${slot.class} — ${slot.room}<br><i class="fas fa-users"></i> ${slot.students} éts.<br><i>${slot.start}–${slot.end}</i>`;
+        bl.onclick=()=>showSlotDetail(slot);
+        cell.appendChild(bl);
+      }
+      grid.appendChild(cell);
+    }
+  });
+}
+
+function renderWeekList(slots,dates) {
+  const grouped={};
+  slots.forEach(s=>{ if(!grouped[s.day])grouped[s.day]=[]; grouped[s.day].push(s); });
+  document.getElementById('week-list').innerHTML=Object.entries(grouped).sort(([a],[b])=>a-b).map(([day,items])=>`
+    <div class="mb-20">
+      <h4 style="margin:0 0 10px;color:var(--dark-blue);">${JOURS[day-1]} ${dates[day-1]?.toLocaleDateString('fr-FR',{day:'2-digit',month:'long'})}</h4>
+      ${items.map(s=>`
+        <div class="d-flex align-center gap-15 mb-8" style="padding:12px;background:white;border-radius:6px;border-left:4px solid ${s.color};">
+          <div style="min-width:90px;color:#666;font-size:0.85rem;font-weight:bold;">${s.start}–${s.end}</div>
+          <div class="flex-1"><strong>${s.course}</strong> <span class="text-muted-sm">| ${s.class} | ${s.room}</span></div>
+          <div><button class="btn-outline" style="padding:4px 10px;font-size:0.78rem;" onclick="window.location.href='presences.html'"><i class="fas fa-user-check"></i> Appel</button></div>
+        </div>`).join('')}
+    </div>`).join('');
+}
+
+function showSlotDetail(slot) {
+  Modal.show(slot.course,
+    `<p><strong>Classe :</strong> ${slot.class}</p>
+     <p><strong>Salle :</strong> ${slot.room}</p>
+     <p><strong>Horaire :</strong> ${slot.start} – ${slot.end}</p>
+     <p><strong>Étudiants :</strong> ${slot.students}</p>`,
+    [{ label:'Faire l\'appel', cls:'btn-primary', fn:"window.location.href='presences.html';Modal.close()" },
+     { label:'Fermer', cls:'btn-outline', fn:'Modal.close()' }]
+  );
+}
+
+function loadEDT() {
+  const dates=getWeekDates(weekOffset);
+  renderHeaders(dates);
+  renderGrid(PROF_SCHEDULE);
+  renderWeekList(PROF_SCHEDULE, dates);
+  document.getElementById('kpi-cours').textContent  = PROF_SCHEDULE.length;
+  document.getElementById('kpi-heures').textContent = PROF_SCHEDULE.reduce((s,sl)=>{ const [sh,sm]=sl.start.split(':').map(Number); const [eh,em]=sl.end.split(':').map(Number); return s+(eh*60+em-sh*60-sm)/60; },0)+'h';
+  const now=new Date(), dayNow=now.getDay()||7, timeNow=`${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
+  const next=PROF_SCHEDULE.find(s=>s.day>dayNow||(s.day===dayNow&&s.start>timeNow));
+  document.getElementById('kpi-next').textContent=next?`${JOURS[next.day-1]} ${next.start}`:'—';
+  const user=ITP_API.auth.currentUser();
+  document.getElementById('prof-name-display').textContent=user?.name||'Prof. Michel Moukoko';
+}
+
+function prevWeek(){weekOffset--;loadEDT();}
+function nextWeek(){weekOffset++;loadEDT();}
+function goToday(){weekOffset=0;loadEDT();}
+loadEDT();
+</script>
+<script>if('serviceWorker' in navigator){navigator.serviceWorker.register('../sw.js').catch(()=>{})}</script>
+</body></html>

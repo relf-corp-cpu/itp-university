@@ -1,0 +1,67 @@
+<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Rapports & PV — ITP University</title>
+<link rel="stylesheet" href="../assets/css/style.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+<link rel="manifest" href="../manifest.json"></head><body>
+<a href="#main-content" class="sr-only">Aller au contenu principal</a>
+<div class="dashboard-layout">
+<aside class="sidebar" role="complementary" aria-label="Menu direction">
+  <h3>Direction</h3>
+  <nav role="navigation" aria-label="Navigation principale" style="display:flex;flex-direction:column;gap:10px;margin-top:20px;">
+    <a href="index.html"       class="nav-link"><i class="fas fa-chart-line"></i> Tableau de bord</a>
+    <a href="deliberations.html" class="nav-link"><i class="fas fa-gavel"></i> Délibérations</a>
+    <a href="validation.html"  class="nav-link"><i class="fas fa-check-double"></i> Validation notes</a>
+    <a href="rapports.html"    class="nav-link"><i class="fas fa-file-pdf"></i> Rapports & PV</a>
+    <a href="emplois_du_temps.html" class="nav-link"><i class="fas fa-calendar-alt"></i> Emplois du temps</a>
+    <a href="bourses.html"     class="nav-link"><i class="fas fa-award"></i> Bourses</a>
+    <a href="#" onclick="if(confirm('Se déconnecter ?')){localStorage.clear();window.location='../auth/login.html';}" class="nav-link"><i class="fas fa-sign-out-alt"></i> Déconnexion</a>
+  </nav>
+</aside>
+<main class="dashboard-main" id="main-content" role="main">
+
+  <div class="page-header">
+    <div><h2 class="page-title">Rapports & PV</h2><p class="text-muted-sm m-0">Documents officiels générés</p></div>
+    <button class="btn-primary" onclick="openGenerate()"><i class="fas fa-file-pdf"></i> Générer un rapport</button>
+  </div>
+  <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:20px;" id="reports-grid"></div>
+  <script>
+  const FB_REP=[
+    {id:1,title:"PV Délibération — L3 GL 2025-2026",type:"pv",date:"2026-06-20",size:"2.4 Mo"},
+    {id:2,title:"Rapport résultats Session 1",type:"rapport",date:"2026-06-18",size:"1.8 Mo"},
+    {id:3,title:"Statistiques inscriptions 2025-2026",type:"stats",date:"2026-05-15",size:"890 Ko"},
+    {id:4,title:"Rapport présences S2",type:"rapport",date:"2026-06-10",size:"1.2 Mo"},
+  ];
+  const T_C={pv:"var(--dark-blue)",rapport:"#e63946",stats:"#2a9d8f"};
+  const T_I={pv:"fa-gavel",rapport:"fa-file-alt",stats:"fa-chart-bar"};
+  document.getElementById("reports-grid").innerHTML=FB_REP.map(r=>`<div class="card">
+    <div class="d-flex align-center gap-12 mb-15">
+      <div class="avatar avatar-md" style="background:${T_C[r.type]||"#666"};"><i class="fas ${T_I[r.type]||"fa-file"}" style="color:white;"></i></div>
+      <div><h4 class="m-0 fs-sm">${Security.sanitize(r.title)}</h4><p class="text-muted-sm m-0">${r.date} · ${r.size}</p></div>
+    </div>
+    <div class="d-flex gap-8">
+      <button class="btn-primary" style="flex:1;font-size:0.82rem;" onclick="downloadReport(${r.id})"><i class="fas fa-download"></i> Télécharger</button>
+      <button class="btn-outline" style="padding:7px 12px;font-size:0.82rem;" onclick="showToast('Aperçu — bientôt disponible.','info')"><i class="fas fa-eye"></i></button>
+    </div>
+  </div>`).join("");
+  function downloadReport(id){showToast("📥 Téléchargement du rapport...","info",3000);Security.log("report_downloaded",{id});}
+  function openGenerate(){
+    Modal.show("Générer un rapport",
+      `<div class="form-group"><label class="form-label">Type de rapport</label><select id="rp-t" class="form-control"><option value="pv">PV de délibération</option><option value="rapport">Rapport de résultats</option><option value="stats">Statistiques</option></select></div>
+       <div class="form-group"><label class="form-label">Filière</label><select id="rp-f" class="form-control"><option>L3 Génie Logiciel</option><option>L2 Réseaux</option><option>L1 Informatique</option></select></div>
+       <div class="form-group"><label class="form-label">Année</label><input id="rp-y" class="form-control" value="2025-2026"></div>`,
+      [{label:"Générer PDF",cls:"btn-primary",fn:"genReport()"},{label:"Annuler",cls:"btn-outline",fn:"Modal.close()"}]
+    );
+  }
+  function genReport(){showToast("📄 Génération en cours...","info",2000);Modal.close();setTimeout(()=>showToast("✅ Rapport généré !","success"),2200);Security.log("report_generated");}
+  </script>
+</main>
+</div>
+<script src="../assets/js/main.js"></script>
+<script src="../assets/js/config.js"></script>
+<script src="../assets/js/api.js"></script>
+<script src="../assets/js/utils.js"></script>
+<script src="../assets/js/auth-guard.js" data-role="direction,admin"></script>
+<script src="../assets/js/tests.js"></script>
+<script src="../assets/js/components.js"></script>
+<script>if('serviceWorker' in navigator){navigator.serviceWorker.register('../sw.js').catch(()=>{})}</script>
+</body></html>

@@ -1,0 +1,65 @@
+<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Gestion des Étudiants — ITP University</title>
+<link rel="stylesheet" href="../assets/css/style.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+<link rel="manifest" href="../manifest.json"></head><body>
+<a href="#main-content" class="sr-only">Aller au contenu principal</a>
+<div class="dashboard-layout">
+<aside class="sidebar" role="complementary" aria-label="Menu secrétariat">
+  <h3>Secrétariat</h3>
+  <nav role="navigation" style="display:flex;flex-direction:column;gap:10px;margin-top:20px;">
+    <a href="index.html"        class="nav-link"><i class="fas fa-user-plus"></i> Inscriptions</a>
+    <a href="attestations.html" class="nav-link"><i class="fas fa-file-alt"></i> Attestations</a>
+    <a href="reclamations.html" class="nav-link"><i class="fas fa-exclamation-circle"></i> Réclamations</a>
+    <a href="paiements.html"    class="nav-link"><i class="fas fa-wallet"></i> Paiements</a>
+    <a href="etudiants.html"    class="nav-link"><i class="fas fa-users"></i> Étudiants</a>
+    <a href="evenements.html"   class="nav-link"><i class="fas fa-calendar-alt"></i> Événements</a>
+    <a href="#" onclick="if(confirm('Se déconnecter ?')){localStorage.clear();window.location='../auth/login.html';}" class="nav-link"><i class="fas fa-sign-out-alt"></i> Déconnexion</a>
+  </nav>
+</aside>
+<main class="dashboard-main" id="main-content" role="main">
+
+  <div class="page-header">
+    <div><h2 class="page-title">Gestion des Étudiants</h2><p class="text-muted-sm m-0">Dossiers, inscriptions et suivi académique</p></div>
+    <div class="d-flex gap-10">
+      <button class="btn-outline" onclick="window.location.href='../pages/pre-inscription.html'"><i class="fas fa-user-plus"></i> Pré-inscriptions</button>
+      <button class="btn-primary" onclick="showToast('Redirection vers Admin Utilisateurs...','info');setTimeout(()=>window.location.href=\'../admin/utilisateurs.html\',1500)"><i class="fas fa-cog"></i> Gestion complète</button>
+    </div>
+  </div>
+  <div class="kpi-row mb-30">
+    <div class="stat-card" style="border-left-color:var(--dark-blue);"><p class="stat-label">Total inscrits</p><div class="stat-val">1 245</div></div>
+    <div class="stat-card" style="border-left-color:#28a745;"><p class="stat-label">En règle</p><div class="stat-val">1 089</div></div>
+    <div class="stat-card" style="border-left-color:var(--red-itp);"><p class="stat-label">Avec dettes</p><div class="stat-val">156</div></div>
+    <div class="stat-card" style="border-left-color:#f57c00;"><p class="stat-label">Pré-inscrits</p><div class="stat-val">42</div></div>
+  </div>
+  <div class="card">
+    <h3 class="mb-20">Recherche rapide d'étudiant</h3>
+    <div class="d-flex gap-10 mb-20">
+      <input type="text" id="stu-search" class="form-control" placeholder="Nom ou matricule..." style="flex:1;" aria-label="Rechercher un étudiant">
+      <button class="btn-primary" onclick="searchStudent()"><i class="fas fa-search"></i> Rechercher</button>
+      <a href="../pages/recherche.html?q=" class="btn-outline"><i class="fas fa-external-link-alt"></i> Recherche globale</a>
+    </div>
+    <div id="stu-result"></div>
+  </div>
+  <script>
+  function searchStudent() {
+    const q = document.getElementById("stu-search").value.trim();
+    if (!q) { showToast("Entrez un nom ou matricule.","warning"); return; }
+    document.getElementById("stu-result").innerHTML = "<p class=\"text-muted-sm\"><i class=\"fas fa-spinner fa-spin\"></i> Recherche en cours...</p>";
+    setTimeout(()=>{
+      document.getElementById("stu-result").innerHTML = `<div class="card" style="border-left:4px solid var(--dark-blue);"><div class="d-flex gap-15 align-center"><div class="avatar avatar-lg bg-dark-blue" style="background:var(--dark-blue);">D</div><div><h4 class="m-0">MACKAYA Djepht</h4><p class="text-muted-sm m-0">ITP-2026-0452 · L3 Génie Logiciel</p><p class="text-muted-sm m-0">Statut : <span style="color:#28a745;font-weight:bold;">En règle</span></p></div><a href="../student/index.html" class="btn-primary" style="margin-left:auto;">Voir le dossier</a></div></div>`;
+    }, 800);
+    Security.log("student_search_secr",{q});
+  }
+  </script>
+</main>
+</div>
+<script src="../assets/js/main.js"></script>
+<script src="../assets/js/config.js"></script>
+<script src="../assets/js/api.js"></script>
+<script src="../assets/js/utils.js"></script>
+<script src="../assets/js/auth-guard.js" data-role="secretary,admin"></script>
+<script src="../assets/js/tests.js"></script>
+<script src="../assets/js/components.js"></script>
+<script>if('serviceWorker' in navigator){navigator.serviceWorker.register('../sw.js').catch(()=>{})}</script>
+</body></html>

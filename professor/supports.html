@@ -1,0 +1,200 @@
+<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Supports de cours — ITP University</title>
+<link rel="stylesheet" href="../assets/css/style.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+<link rel="manifest" href="../manifest.json"></head><body>
+<a href="#main-content" class="sr-only">Aller au contenu principal</a>
+<div class="dashboard-layout">
+<aside class="sidebar" role="complementary">
+  <h3>Espace Professeur</h3>
+    <nav role="navigation" aria-label="Navigation principale" style="display:flex;flex-direction:column;gap:10px;margin-top:20px;">
+    <a href="index.html"     class="nav-link"><i class="fas fa-home"></i> Tableau de bord</a>
+    <a href="notes.html"     class="nav-link"><i class="fas fa-edit"></i> Gestion des Notes</a>
+    <a href="presences.html" class="nav-link"><i class="fas fa-user-check"></i> Présences</a>
+    <a href="edt.html"       class="nav-link"><i class="fas fa-calendar-alt"></i> Mon EDT</a>
+    <a href="supports.html"  class="nav-link"><i class="fas fa-folder-open"></i> Supports de cours</a>
+    <a href="#" onclick="if(confirm('Se déconnecter ?')){localStorage.clear();window.location='../auth/login.html';}" class="nav-link"><i class="fas fa-sign-out-alt"></i> Déconnexion</a>
+  </nav>
+</aside>
+<main class="dashboard-main" id="main-content" role="main">
+  <div class="page-header">
+    <div>
+      <h2 class="page-title">Supports de Cours</h2>
+      <p class="text-muted-sm m-0">Déposez et gérez vos ressources pédagogiques</p>
+    </div>
+    <button class="btn-primary" onclick="openUpload()"><i class="fas fa-upload"></i> Déposer un support</button>
+  </div>
+
+  <!-- Filtres -->
+  <div class="card mb-20">
+    <div class="d-flex gap-10 flex-wrap align-center">
+      <select id="filter-course" class="form-control" style="width:auto;" onchange="filterMaterials()" aria-label="Cours">
+        <option value="">Tous les cours</option>
+        <option value="1">Algorithmique</option>
+        <option value="2">Base de données SQL</option>
+        <option value="3">Développement Web</option>
+      </select>
+      <select id="filter-type" class="form-control" style="width:auto;" onchange="filterMaterials()" aria-label="Type">
+        <option value="">Tous types</option>
+        <option value="pdf">PDF</option>
+        <option value="video">Vidéo</option>
+        <option value="link">Lien</option>
+        <option value="exercise">Exercice</option>
+      </select>
+      <input type="text" id="search-mat" class="form-control" placeholder="Rechercher..." style="flex:1;min-width:180px;" oninput="filterMaterials()" aria-label="Rechercher">
+    </div>
+  </div>
+
+  <!-- Stats -->
+  <div class="kpi-row mb-30">
+    <div class="stat-card" style="border-left-color:var(--dark-blue);"><p class="stat-label">Total supports</p><div id="kpi-total-mat" class="stat-val">—</div></div>
+    <div class="stat-card" style="border-left-color:var(--red-itp);"><p class="stat-label">PDF</p><div id="kpi-pdf" class="stat-val">—</div></div>
+    <div class="stat-card" style="border-left-color:#2a9d8f;"><p class="stat-label">Exercices</p><div id="kpi-exercise" class="stat-val">—</div></div>
+    <div class="stat-card" style="border-left-color:#e9c46a;"><p class="stat-label">Téléchargements</p><div id="kpi-dl" class="stat-val">—</div></div>
+  </div>
+
+  <!-- Grille des supports -->
+  <div id="materials-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:20px;"></div>
+  <p id="no-results" class="d-none" class="text-center text-muted-sm mt-20">Aucun support trouvé.</p>
+</main>
+</div>
+
+<script src="../assets/js/main.js"></script>
+<script src="../assets/js/config.js"></script>
+<script src="../assets/js/api.js"></script>
+<script src="../assets/js/utils.js"></script>
+<script src="../assets/js/auth-guard.js" data-role="professor,admin"></script>
+<script src="../assets/js/tests.js"></script>
+<script src="../assets/js/components.js"></script>
+<script>
+const TYPE_META = {
+  pdf:      { icon:'fa-file-pdf',    color:'#e63946', label:'PDF'      },
+  video:    { icon:'fa-file-video',  color:'#9c27b0', label:'Vidéo'    },
+  link:     { icon:'fa-link',        color:'#2196F3', label:'Lien'     },
+  exercise: { icon:'fa-tasks',       color:'#f57c00', label:'Exercice' },
+};
+
+let allMaterials = [
+  { id:1, course_id:1, course:'Algorithmique',    title:'Cours 1 — Introduction à l\'algorithmique',    type:'pdf',      size:'2.4 Mo', downloads:34, date:'2026-01-15' },
+  { id:2, course_id:1, course:'Algorithmique',    title:'TD 1 — Exercices de tri',                       type:'exercise', size:'850 Ko', downloads:28, date:'2026-02-01' },
+  { id:3, course_id:2, course:'Base de données',  title:'Cours 2 — Modèle Entité-Association',           type:'pdf',      size:'3.1 Mo', downloads:42, date:'2026-02-10' },
+  { id:4, course_id:2, course:'Base de données',  title:'TP 1 — Requêtes SQL avancées',                  type:'exercise', size:'1.2 Mo', downloads:39, date:'2026-02-20' },
+  { id:5, course_id:3, course:'Développement Web','title':'Cours 3 — Laravel — Introduction',            type:'pdf',      size:'4.5 Mo', downloads:51, date:'2026-03-05' },
+  { id:6, course_id:3, course:'Développement Web','title':'Tutoriel vidéo — Installation Laravel',       type:'video',    size:'—',      downloads:67, date:'2026-03-10' },
+  { id:7, course_id:1, course:'Algorithmique',    title:'Ressource externe — Visualgo',                  type:'link',     size:'—',      downloads:22, date:'2026-03-15' },
+];
+
+function renderMaterials(list) {
+  const grid = document.getElementById('materials-grid');
+  const none = document.getElementById('no-results');
+  document.getElementById('kpi-total-mat').textContent = allMaterials.length;
+  document.getElementById('kpi-pdf').textContent       = allMaterials.filter(m=>m.type==='pdf').length;
+  document.getElementById('kpi-exercise').textContent  = allMaterials.filter(m=>m.type==='exercise').length;
+  document.getElementById('kpi-dl').textContent        = allMaterials.reduce((s,m)=>s+m.downloads,0);
+
+  if (!list.length) { grid.innerHTML=''; none.style.display='block'; return; }
+  none.style.display='none';
+  grid.innerHTML = list.map(m => {
+    const meta = TYPE_META[m.type] || TYPE_META.pdf;
+    return `
+    <div class="card" style="border-top:4px solid ${meta.color};">
+      <div class="d-flex align-center gap-12 mb-12">
+        <div style="width:42px;height:42px;background:${meta.color}22;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+          <i class="fas ${meta.icon}" style="color:${meta.color};font-size:1.1rem;"></i>
+        </div>
+        <div class="flex-1" style="min-width:0;">
+          <h4 class="m-0" style="font-size:0.9rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="${m.title}">${m.title}</h4>
+          <p class="text-muted-sm m-0" style="font-size:0.78rem;">${m.course}</p>
+        </div>
+      </div>
+      <div class="d-flex justify-between mb-12" style="font-size:0.8rem;color:#666;">
+        <span><span class="badge" style="background:${meta.color};color:white;font-size:0.72rem;">${meta.label}</span></span>
+        <span>${m.size !== '—' ? m.size : ''}</span>
+        <span><i class="fas fa-download"></i> ${m.downloads}</span>
+      </div>
+      <p class="text-muted-sm m-0 mb-12" style="font-size:0.78rem;"><i class="fas fa-calendar"></i> ${new Date(m.date).toLocaleDateString('fr-FR')}</p>
+      <div class="d-flex gap-8">
+        <button class="btn-primary" style="flex:1;font-size:0.8rem;padding:7px;" onclick="downloadMaterial(${m.id})"><i class="fas fa-download"></i> Télécharger</button>
+        <button class="btn-outline"  style="padding:7px 10px;font-size:0.8rem;" onclick="editMaterial(${m.id})" aria-label="Modifier"><i class="fas fa-edit"></i></button>
+        <button class="btn-danger"   style="padding:7px 10px;font-size:0.8rem;" onclick="deleteMaterial(${m.id})" aria-label="Supprimer"><i class="fas fa-trash"></i></button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function filterMaterials() {
+  const course = document.getElementById('filter-course').value;
+  const type   = document.getElementById('filter-type').value;
+  const q      = document.getElementById('search-mat').value.toLowerCase();
+  renderMaterials(allMaterials.filter(m =>
+    (!course || m.course_id === parseInt(course)) &&
+    (!type   || m.type === type) &&
+    (!q      || m.title.toLowerCase().includes(q) || m.course.toLowerCase().includes(q))
+  ));
+}
+
+function openUpload() {
+  Modal.show('Déposer un support de cours',
+    `<div class="form-group"><label class="form-label">Cours associé</label>
+      <select id="up-course" class="form-control" aria-label="Cours">
+        <option value="1">Algorithmique</option>
+        <option value="2">Base de données SQL</option>
+        <option value="3">Développement Web</option>
+      </select></div>
+    <div class="form-group"><label class="form-label">Titre du support</label>
+      <input id="up-title" class="form-control" required placeholder="Ex: Cours 4 — Récursivité"></div>
+    <div class="form-grid-2">
+      <div class="form-group"><label class="form-label">Type</label>
+        <select id="up-type" class="form-control" aria-label="Type">
+          <option value="pdf">PDF</option>
+          <option value="exercise">Exercice</option>
+          <option value="video">Vidéo</option>
+          <option value="link">Lien externe</option>
+        </select></div>
+      <div class="form-group"><label class="form-label" id="up-file-label">Fichier ou URL</label>
+        <input id="up-file" class="form-control" type="file" accept=".pdf,.doc,.docx,.pptx,.mp4"></div>
+    </div>`,
+    [{ label:'Déposer', cls:'btn-primary', fn:'saveMaterial()' }, { label:'Annuler', cls:'btn-outline', fn:'Modal.close()' }]
+  );
+}
+
+function saveMaterial() {
+  const title     = document.getElementById('up-title')?.value?.trim();
+  const courseId  = parseInt(document.getElementById('up-course')?.value || 1);
+  const type      = document.getElementById('up-type')?.value;
+  const file      = document.getElementById('up-file')?.files[0];
+  if (!title) { showToast('Le titre est obligatoire.','warning'); return; }
+  const courses   = { 1:'Algorithmique', 2:'Base de données SQL', 3:'Développement Web' };
+  const newMat    = { id:Date.now(), course_id:courseId, course:courses[courseId], title, type, size:file ? (file.size/1024/1024).toFixed(1)+' Mo' : '—', downloads:0, date:new Date().toISOString().split('T')[0] };
+  allMaterials.unshift(newMat);
+  filterMaterials();
+  Modal.close();
+  Security.log('material_uploaded', { title, type, course: courses[courseId] });
+  showToast(`✅ "${title}" déposé avec succès !`, 'success');
+}
+
+function downloadMaterial(id) {
+  const m = allMaterials.find(x=>x.id===id);
+  if (!m) return;
+  m.downloads++;
+  filterMaterials();
+  Security.log('material_downloaded', { title:m.title });
+  showToast(`📥 Téléchargement de "${m.title}"...`, 'info', 3000);
+}
+
+function editMaterial(id) {
+  showToast('Édition — disponible bientôt.','info');
+}
+
+function deleteMaterial(id) {
+  const m = allMaterials.find(x=>x.id===id);
+  if (!m || !confirm(`Supprimer "${m.title}" ?`)) return;
+  allMaterials = allMaterials.filter(x=>x.id!==id);
+  filterMaterials();
+  showToast('Support supprimé.','success');
+}
+
+renderMaterials(allMaterials);
+</script>
+<script>if('serviceWorker' in navigator){navigator.serviceWorker.register('../sw.js').catch(()=>{})}</script>
+</body></html>

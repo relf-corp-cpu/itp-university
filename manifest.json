@@ -1,0 +1,21 @@
+{
+  "name": "ITP University Brazzaville",
+  "short_name": "ITP Univ",
+  "description": "Système de gestion universitaire — Institut Technique Polytechnique, Brazzaville",
+  "start_url": "/index.html",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#1D3557",
+  "orientation": "any",
+  "lang": "fr",
+  "icons": [
+    { "src": "assets/images/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
+    { "src": "assets/images/icon-192.png", "sizes": "512x512", "type": "image/png" }
+  ],
+  "categories": ["education"],
+  "screenshots": [],
+  "shortcuts": [
+    { "name": "Connexion", "url": "/auth/login.html", "icons": [{"src": "assets/images/icon-192.png","sizes":"192x192"}] },
+    { "name": "Mes Notes", "url": "/student/notes.html", "icons": [{"src": "assets/images/icon-192.png","sizes":"192x192"}] }
+  ]
+}

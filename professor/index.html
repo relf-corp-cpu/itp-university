@@ -1,0 +1,251 @@
+<!DOCTYPE html><html lang="fr"><head>
+  <link rel="manifest" href="../manifest.json">
+  <meta name="theme-color" content="#1D3557"><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Espace Professeur — ITP University</title>
+<link rel="stylesheet" href="../assets/css/style.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+<link rel="icon" href="../assets/images/icon-192.png"></head><body>
+<div class="dashboard-layout">
+<aside role="complementary" aria-label="Menu de navigation" style="width:250px;background-color:var(--dark-blue);color:white;padding:20px;min-height:100vh;flex-shrink:0;">
+  <h3 style="color:white;border-bottom:1px solid rgba(255,255,255,0.1);padding-bottom:10px;">Espace Professeur</h3>
+  <nav role="navigation" aria-label="Navigation principale" style="display:flex;flex-direction:column;gap:10px;margin-top:20px;">
+    <a href="index.html"     class="nav-link"><i class="fas fa-home"></i> Tableau de bord</a>
+    <a href="notes.html"     class="nav-link"><i class="fas fa-edit"></i> Gestion des Notes</a>
+    <a href="presences.html" class="nav-link"><i class="fas fa-user-check"></i> Présences</a>
+    <a href="edt.html"       class="nav-link"><i class="fas fa-calendar-alt"></i> Mon EDT</a>
+    <a href="supports.html"  class="nav-link"><i class="fas fa-folder-open"></i> Supports de cours</a>
+    <a href="#" onclick="if(confirm('Se déconnecter ?')){localStorage.clear();window.location='../auth/login.html';}" class="nav-link"><i class="fas fa-sign-out-alt"></i> Déconnexion</a>
+  </nav>
+  <div style="margin-top:auto;padding-top:10px;border-top:1px solid rgba(255,255,255,0.1);">
+    <a href="../pages/messagerie.html" class="nav-link"><i class="fas fa-comments"></i> Messagerie</a>
+  </div>
+</aside>
+<main role="main" id="main-content" style="flex:1;padding:40px;background:#f8f9fa;">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:30px;flex-wrap:wrap;gap:10px;">
+    <div>
+      <h2 id="prof-greeting" class="m-0">Mes Cours</h2>
+      <p id="mode-badge" style="margin:4px 0 0;font-size:0.85rem;color:#666;"></p>
+    </div>
+    <button class="btn-primary" onclick="refreshAll()"><i class="fas fa-sync"></i> Actualiser</button>
+  </div>
+
+  <!-- Cours -->
+  <div id="courses-grid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:20px;margin-bottom:40px;">
+    <div class="card" style="text-align:center;color:#999;grid-column:1/-1;padding:30px;">
+      <i class="fas fa-spinner fa-spin fa-2x"></i><p>Chargement des cours...</p>
+    </div>
+  </div>
+
+  <!-- Saisie rapide des notes -->
+  <div class="card" class="mb-40" id="notes">
+    <h3>Saisie rapide des notes</h3>
+    <p style="color:#666;font-size:0.85rem;margin-top:5px;">Formule : DST×30% + Session×70% &nbsp;|&nbsp; Avec TP : DST×30% + TP×20% + Session×50%</p>
+    <div style="display:flex;gap:10px;margin-top:15px;flex-wrap:wrap;">
+      <select id="grade-course" style="padding:10px;flex:1;border:1px solid var(--light-grey);border-radius:4px;min-width:160px;">
+        <option value="">— Sélectionner un cours —</option>
+      </select>
+      <select id="grade-type" style="padding:10px;flex:1;border:1px solid var(--light-grey);border-radius:4px;min-width:120px;">
+        <option value="DST">DST (30%)</option>
+        <option value="TP">TP (20%)</option>
+        <option value="Session">Session (70%)</option>
+        <option value="Rattrapage">Rattrapage</option>
+      </select>
+      <button class="btn-primary" onclick="openGradeSheet()">Ouvrir la grille</button>
+    </div>
+
+    <!-- Grille de saisie -->
+    <div id="grade-sheet" style="display:none;margin-top:20px;">
+      <table style="width:100%;border-collapse:collapse;font-size:0.9rem;">
+        <thead><tr style="background:#f1f1f1;text-align:left;">
+          <th style="padding:10px;">Étudiant</th>
+          <th style="padding:10px;">Note /20</th>
+          <th style="padding:10px;">Aperçu Moyenne</th>
+        </tr></thead>
+        <tbody id="grade-sheet-body"></tbody>
+      </table>
+      <div style="margin-top:15px;display:flex;gap:10px;">
+        <button class="btn-primary" onclick="saveGrades()"><i class="fas fa-save"></i> Enregistrer</button>
+        <button class="btn-outline" onclick="document.getElementById('grade-sheet').style.display='none'">Annuler</button>
+      </div>
+      <p id="grade-save-msg" style="display:none;margin-top:10px;color:green;"></p>
+    </div>
+  </div>
+
+  <!-- Emploi du temps -->
+  <div class="card" class="mb-40" id="edt">
+    <h3>Mon Emploi du Temps</h3>
+    <div id="prof-schedule" class="mt-15">
+      <p style="color:#999;"><i class="fas fa-spinner fa-spin" aria-hidden="true"></i><span class="sr-only">Chargement en cours</span> Chargement...</p>
+    </div>
+  </div>
+
+  <!-- Supports de cours -->
+  <div class="card" id="supports">
+    <h3>Supports de Cours</h3>
+    <div style="margin-top:15px;display:flex;gap:10px;flex-wrap:wrap;">
+      <select id="support-course" style="padding:10px;flex:1;border:1px solid var(--light-grey);border-radius:4px;min-width:160px;">
+        <option value="">— Sélectionner un cours —</option>
+      </select>
+      <input type="text" id="support-title" placeholder="Titre du document" style="padding:10px;flex:1;border:1px solid var(--light-grey);border-radius:4px;">
+      <input type="file" id="support-file" style="padding:10px;flex:1;border:1px solid var(--light-grey);border-radius:4px;">
+      <button class="btn-primary" onclick="uploadSupport()">Envoyer</button>
+    </div>
+    <p id="support-msg" style="display:none;margin-top:10px;color:green;"></p>
+  </div>
+</main>
+</div>
+<script src="../assets/js/auth-guard.js" data-role="professor"></script>
+<script src="../assets/js/main.js"></script>
+<script src="../assets/js/config.js"></script>
+<script src="../assets/js/api.js"></script>
+<script src="../assets/js/utils.js"></script>
+<script src="../assets/js/tests.js"></script>
+<script src="../assets/js/components.js"></script>
+<script>
+const FB_COURSES = [
+  { id:1, name:'Algorithmique', class_name:'L2 Informatique', student_count:45, color:'#1D3557' },
+  { id:2, name:'Base de données SQL', class_name:'L1 Informatique', student_count:60, color:'#e63946' },
+  { id:3, name:'Réseaux Mobiles', class_name:'L2 Télécoms', student_count:25, color:'#2a9d8f' },
+];
+const FB_STUDENTS = [
+  { id:1, first_name:'Djepht',  last_name:'MACKAYA' },
+  { id:2, first_name:'Alice',   last_name:"M'BOKA" },
+  { id:3, first_name:'Patrick', last_name:'LOUZOLO' },
+  { id:4, first_name:'Moussa',  last_name:'TRAORÉ' },
+];
+const FB_SCHEDULE = [
+  { day:'Lundi',    time:'08h00–10h00', course:'Algorithmique',    room:'Salle 101' },
+  { day:'Mardi',    time:'14h00–16h00', course:'Base de données',  room:'Salle 204' },
+  { day:'Mercredi', time:'08h00–10h00', course:'Réseaux Mobiles',  room:'Salle B1'  },
+];
+
+let loadedCourses = [];
+
+async function loadCourses() {
+  try {
+    const data = await ITP_API.courses.getAll();
+    loadedCourses = data && data.length ? data.map(c => ({
+      id: c.id, name: c.name, class_name: 'Promotion', student_count: '—', color: '#1D3557'
+    })) : FB_COURSES;
+  } catch { loadedCourses = FB_COURSES; }
+  renderCourses(loadedCourses);
+  populateCourseSelects(loadedCourses);
+}
+
+function renderCourses(courses) {
+  document.getElementById('courses-grid').innerHTML = courses.map(c => `
+    <div class="card" style="border-top:4px solid ${c.color};">
+      <h3 style="margin:0 0 8px;">${c.name}</h3>
+      <p style="margin:0;color:#666;font-size:0.9rem;">Classe : ${c.class_name}</p>
+      <p style="margin:4px 0;color:#666;font-size:0.9rem;">Étudiants : ${c.student_count}</p>
+      <div style="display:flex;gap:8px;margin-top:12px;">
+        <button class="btn-primary" style="flex:1;padding:7px;font-size:0.8rem;" onclick="selectCourse(${c.id})">Gérer</button>
+        <a href="presences.html" class="btn-outline" style="flex:1;padding:7px;font-size:0.8rem;text-align:center;">Appel</a>
+      </div>
+    </div>`).join('');
+}
+
+function populateCourseSelects(courses) {
+  const opts = courses.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+  document.getElementById('grade-course').innerHTML   = '<option value="">— Sélectionner —</option>' + opts;
+  document.getElementById('support-course').innerHTML = '<option value="">— Sélectionner —</option>' + opts;
+}
+
+function selectCourse(id) {
+  document.getElementById('grade-course').value = id;
+  document.getElementById('grade-course').dispatchEvent(new Event('change'));
+  document.getElementById('notes').scrollIntoView({ behavior:'smooth' });
+}
+
+function openGradeSheet() {
+  const courseId = document.getElementById('grade-course').value;
+  if (!courseId) { alert('Sélectionnez un cours.'); return; }
+  const type = document.getElementById('grade-type').value;
+  document.getElementById('grade-sheet').style.display = 'block';
+  document.getElementById('grade-sheet-body').innerHTML = FB_STUDENTS.map(s => `
+    <tr style="border-bottom:1px solid var(--light-grey);">
+      <td style="padding:10px;">${s.last_name} ${s.first_name}</td>
+      <td style="padding:10px;">
+        <input type="number" class="grade-input" data-student="${s.id}" min="0" max="20" step="0.5"
+          style="width:80px;padding:6px;border:1px solid var(--light-grey);border-radius:4px;" oninput="previewMoy(this)">
+      </td>
+      <td style="padding:10px;font-size:0.85rem;color:#666;" id="preview-${s.id}">—</td>
+    </tr>`).join('');
+  document.getElementById('grade-sheet').scrollIntoView({ behavior:'smooth' });
+}
+
+function previewMoy(input) {
+  const val = parseFloat(input.value);
+  const id  = input.dataset.student;
+  const el  = document.getElementById(`preview-${id}`);
+  if (!isNaN(val)) {
+    const type = document.getElementById('grade-type').value;
+    const pct  = type==='DST' ? '30%' : type==='TP' ? '20%' : '70%';
+    el.textContent = `${val}/20 (${pct})`;
+    el.style.color = val >= 10 ? 'green' : 'var(--red-itp)';
+  } else { el.textContent = '—'; el.style.color = '#666'; }
+}
+
+async function saveGrades() {
+  const courseId = document.getElementById('grade-course').value;
+  const type     = document.getElementById('grade-type').value;
+  const records  = [];
+  document.querySelectorAll('.grade-input').forEach(inp => {
+    const val = parseFloat(inp.value);
+    if (!isNaN(val)) records.push({ student_id: parseInt(inp.dataset.student), course_id: parseInt(courseId), type, grade: val });
+  });
+  if (!records.length) { alert('Saisissez au moins une note.'); return; }
+  try { await ITP_API.evaluations.createBulk(records); } catch {}
+  const msg = document.getElementById('grade-save-msg');
+  msg.style.display = 'block';
+  msg.textContent   = `✅ ${records.length} note(s) enregistrée(s) avec succès !`;
+  setTimeout(() => { msg.style.display='none'; document.getElementById('grade-sheet').style.display='none'; }, 3000);
+}
+
+function loadSchedule() {
+  document.getElementById('prof-schedule').innerHTML = FB_SCHEDULE.map(s => `
+    <div style="display:flex;align-items:center;gap:15px;padding:10px;background:white;border-radius:6px;border-left:4px solid var(--dark-blue);margin-bottom:8px;">
+      <div style="min-width:80px;font-weight:bold;color:var(--dark-blue);">${s.day}</div>
+      <div style="min-width:100px;color:#666;font-size:0.9rem;">${s.time}</div>
+      <div><strong>${s.course}</strong> — ${s.room}</div>
+    </div>`).join('');
+}
+
+function uploadSupport() {
+  const course = document.getElementById('support-course').value;
+  const title  = document.getElementById('support-title').value.trim();
+  const file   = document.getElementById('support-file').files[0];
+  const msg    = document.getElementById('support-msg');
+  if (!course || !title || !file) { alert('Remplissez tous les champs.'); return; }
+  msg.style.display = 'block';
+  msg.textContent   = `✅ Support "${title}" (${file.name}) publié avec succès !`;
+  document.getElementById('support-title').value = '';
+  document.getElementById('support-file').value  = '';
+}
+
+const user = ITP_API.auth.currentUser();
+document.getElementById('prof-greeting').textContent = `Bonjour, ${user?.name || 'Prof. Michel Moukoko'}`;
+document.getElementById('mode-badge').textContent    = ITP_CONFIG.mode === 'laravel' ? '⚡ Laravel XAMPP' : '☁️ Supabase';
+
+function refreshAll() { loadCourses(); loadSchedule(); }
+refreshAll();
+</script>
+
+<script>
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('../sw.js').catch(() => {});
+}
+</script>
+
+<!-- PWA Banner -->
+<div id="pwa-banner">
+  <div class="d-flex align-center gap-12">
+    <img src="../assets/images/icon-192.png" style="width:36px;height:36px;border-radius:8px;">
+    <div><strong>ITP University</strong><br><small>Installer l'application sur votre appareil</small></div>
+  </div>
+  <div class="d-flex gap-10">
+    <button onclick="installPWA()" style="background:white;color:var(--dark-blue);border:none;padding:8px 16px;border-radius:5px;cursor:pointer;font-weight:bold;">Installer</button>
+    <button onclick="dismissPWA()" style="background:none;border:none;color:rgba(255,255,255,0.7);cursor:pointer;font-size:1.2rem;">&#x2715;</button>
+  </div>
+</div>
+</body></html>

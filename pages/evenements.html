@@ -1,0 +1,105 @@
+<!DOCTYPE html><html lang="fr"><head>
+  <link rel="manifest" href="../manifest.json">
+  <meta name="theme-color" content="#1D3557"><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Événements — ITP University</title>
+<link rel="stylesheet" href="../assets/css/style.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+<link rel="icon" href="../assets/images/icon-192.png"></head><body>
+<div id="itp-header"></div>
+<main role="main" id="main-content" style="padding:50px;">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:40px;flex-wrap:wrap;gap:15px;">
+    <h2 class="m-0">Calendrier des Événements</h2>
+    <span id="events-status" class="text-muted-sm"><i class="fas fa-spinner fa-spin" aria-hidden="true"></i><span class="sr-only">Chargement en cours</span> Chargement...</span>
+  </div>
+  <div id="events-container" style="max-width:900px;margin:0 auto;">
+    <div style="padding:30px;text-align:center;color:#999;"><i class="fas fa-spinner fa-spin fa-2x"></i></div>
+  </div>
+</main>
+<div id="itp-footer"></div>
+<script src="../assets/js/main.js"></script>
+<script src="../assets/js/config.js"></script>
+<script src="../assets/js/api.js"></script>
+<script src="../assets/js/utils.js"></script>
+<script src="../assets/js/tests.js"></script>
+<script src="../assets/js/components.js"></script>
+<script>
+const FB_EVENTS = [
+  { id:1, title:'Hackathon ITP 2026', description:'Compétition de programmation intensive — 48h pour innover et créer des solutions technologiques.', event_date:'2026-06-25T08:00:00', location:'Grand Hall, Poto-Poto, Brazzaville', color:'var(--dark-blue)' },
+  { id:2, title:'Conférence Cybersécurité', description:'Les enjeux de la protection des données en Afrique centrale. Intervenants nationaux et internationaux.', event_date:'2026-07-02T14:00:00', location:'Amphithéâtre A, Campus Brazzaville', color:'var(--red-itp)' },
+  { id:3, title:'Remise des Diplômes 2026', description:'Cérémonie solennelle de remise des diplômes de la promotion 2026. Présence de la Direction et des familles.', event_date:'2026-07-15T10:00:00', location:'Palais des Congrès, Brazzaville', color:'#2a9d8f' },
+  { id:4, title:'Journée Portes Ouvertes', description:'Découvrez l\'ITP et ses formations. Rencontrez les professeurs et anciens étudiants.', event_date:'2026-08-01T09:00:00', location:'Campus Brazzaville & Pointe-Noire', color:'#e9c46a' },
+];
+
+const MONTHS_FR = ['JAN','FÉV','MAR','AVR','MAI','JUN','JUL','AOÛ','SEP','OCT','NOV','DÉC'];
+
+async function loadEvents() {
+  let events;
+  try {
+    events = await ITP_API.events.getAll();
+    if (!events || !events.length) events = FB_EVENTS;
+  } catch { events = FB_EVENTS; }
+  renderEvents(events);
+}
+
+function renderEvents(events) {
+  document.getElementById('events-status').textContent = `${events.length} événement(s)`;
+  const now = new Date();
+  const html = events.map(ev => {
+    const d       = new Date(ev.event_date);
+    const past    = d < now;
+    const day     = d.getDate();
+    const month   = MONTHS_FR[d.getMonth()];
+    const time    = d.toLocaleTimeString('fr-FR', { hour:'2-digit', minute:'2-digit' });
+    const color   = ev.color || 'var(--dark-blue)';
+    return `
+      <div class="card" style="display:flex;gap:20px;align-items:flex-start;margin-bottom:20px;flex-wrap:wrap;opacity:${past?'0.6':'1'};">
+        <div style="background:${color};color:white;padding:15px 20px;border-radius:10px;text-align:center;min-width:80px;flex-shrink:0;">
+          <h3 style="color:white;margin:0;font-size:1.8rem;">${day}</h3>
+          <p style="margin:0;font-size:0.8rem;">${month}</p>
+        </div>
+        <div class="flex-1">
+          <h3 style="margin:0 0 8px;">${ev.title}</h3>
+          <p style="color:#666;margin:0 0 5px;font-size:0.9rem;"><i class="fas fa-clock"></i> ${time} &nbsp;|&nbsp; <i class="fas fa-map-marker-alt"></i> ${ev.location || ev.lieu || 'ITP Brazzaville'}</p>
+          <p class="m-0">${ev.description || ''}</p>
+        </div>
+        <div style="flex-shrink:0;">
+          ${past
+            ? '<span class="text-muted-sm">Terminé</span>'
+            : `<button class="btn-primary" onclick="register(${ev.id},'${ev.title.replace(/'/g,'\\'')}')">S'inscrire</button>`}
+        </div>
+      </div>`;
+  }).join('');
+  document.getElementById('events-container').innerHTML = html || '<p style="color:#999;text-align:center;">Aucun événement à venir.</p>';
+}
+
+function register(id, title) {
+  const user = ITP_API.auth.currentUser();
+  if (!user) {
+    if (confirm(`Inscrivez-vous à "${title}".\nVous devez être connecté. Aller à la page de connexion ?`))
+      window.location.href = '../auth/login.html';
+    return;
+  }
+  alert(`✅ Inscription à "${title}" confirmée !\nVous recevrez un rappel par email.`);
+}
+
+loadEvents();
+</script>
+
+<script>
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('../sw.js').catch(() => {});
+}
+</script>
+
+<!-- PWA Banner -->
+<div id="pwa-banner">
+  <div class="d-flex align-center gap-12">
+    <img src="../assets/images/icon-192.png" style="width:36px;height:36px;border-radius:8px;">
+    <div><strong>ITP University</strong><br><small>Installer l'application sur votre appareil</small></div>
+  </div>
+  <div class="d-flex gap-10">
+    <button onclick="installPWA()" style="background:white;color:var(--dark-blue);border:none;padding:8px 16px;border-radius:5px;cursor:pointer;font-weight:bold;">Installer</button>
+    <button onclick="dismissPWA()" style="background:none;border:none;color:rgba(255,255,255,0.7);cursor:pointer;font-size:1.2rem;">&#x2715;</button>
+  </div>
+</div>
+</body></html>

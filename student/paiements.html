@@ -1,0 +1,244 @@
+<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Paiements — ITP University</title>
+<link rel="stylesheet" href="../assets/css/style.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+<link rel="icon" href="../assets/images/icon-192.png">
+<link rel="manifest" href="../manifest.json"><meta name="theme-color" content="#1D3557"></head><body>
+<a href="#main-content" class="sr-only" style="position:absolute;left:-999px;" onfocus="this.style.left='10px'">Aller au contenu principal</a>
+
+<div class="dashboard-layout">
+<aside role="complementary" aria-label="Menu de navigation" style="width:250px;background:var(--dark-blue);color:white;padding:20px;min-height:100vh;flex-shrink:0;">
+  <h3 style="color:white;border-bottom:1px solid rgba(255,255,255,0.15);padding-bottom:10px;">Espace Étudiant</h3>
+  <nav role="navigation" aria-label="Navigation principale" style="display:flex;flex-direction:column;gap:10px;margin-top:20px;">
+    <a href="index.html"           class="nav-link"><i class="fas fa-home"></i> Tableau de bord</a>
+    <a href="notes.html"           class="nav-link"><i class="fas fa-graduation-cap"></i> Mes Notes</a>
+    <a href="emploi_du_temps.html" class="nav-link"><i class="fas fa-calendar-alt"></i> Emploi du temps</a>
+    <a href="paiements.html"       class="nav-link"><i class="fas fa-wallet"></i> Paiements</a>
+    <a href="documents.html"       class="nav-link"><i class="fas fa-file-alt"></i> Mes Documents</a>
+    <a href="carte_numerique.html" class="nav-link"><i class="fas fa-id-card"></i> Carte Numérique</a>
+    <a href="reclamations.html"    class="nav-link"><i class="fas fa-exclamation-circle"></i> Réclamations</a>
+    <a href="profil.html"          class="nav-link"><i class="fas fa-user"></i> Mon Profil</a>
+    <a href="#" onclick="if(confirm('Se déconnecter ?')){localStorage.clear();window.location='../auth/login.html';}" class="nav-link"><i class="fas fa-sign-out-alt"></i> Déconnexion</a>
+  </nav>
+</aside>
+<main role="main" id="main-content" style="flex:1;padding:40px;background:#f8f9fa;">
+  <h2 style="margin:0 0 30px;">Paiements &amp; Reçus</h2>
+
+  <div id="tabs-paiements">
+    <div class="tabs">
+      <button class="tab active" data-tab="tab-pay">Effectuer un paiement</button>
+      <button class="tab" data-tab="tab-history">Historique</button>
+    </div>
+
+    <!-- Formulaire paiement -->
+    <div class="tab-panel active" id="tab-pay">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:30px;">
+        <div class="card">
+          <h3>Nouveau paiement</h3>
+          <form id="payment-form" aria-label="Formulaire de paiement" class="mt-20" onsubmit="processPayment(event)">
+            <div class="form-group">
+              <label class="form-label">Type de frais</label>
+              <select id="fee-type" class="form-control" onchange="updateAmount()">
+                <option value="50000">Inscription Annuelle — 50 000 FCFA</option>
+                <option value="200000">Scolarité — Tranche 1 — 200 000 FCFA</option>
+                <option value="150000">Scolarité — Tranche 2 — 150 000 FCFA</option>
+                <option value="25000">Examen de rattrapage — 25 000 FCFA</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Montant (FCFA)</label>
+              <input type="text" id="amount-display" class="form-control" value="50 000 FCFA" readonly style="background:#f4f4f4;font-size:1.1rem;font-weight:bold;color:var(--dark-blue);">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Méthode de paiement</label>
+              <div style="display:flex;gap:12px;">
+                <label id="label-mtn" style="flex:1;padding:12px;border:2px solid var(--dark-blue);border-radius:8px;cursor:pointer;display:flex;align-items:center;gap:10px;">
+                  <input type="radio" name="method" value="MTN" checked onchange="selectMethod('MTN')">
+                  <span style="font-weight:bold;color:#f57c00;font-size:1.1rem;">MTN Money</span>
+                </label>
+                <label id="label-airtel" style="flex:1;padding:12px;border:2px solid var(--light-grey);border-radius:8px;cursor:pointer;display:flex;align-items:center;gap:10px;">
+                  <input type="radio" name="method" value="Airtel" onchange="selectMethod('Airtel')">
+                  <span style="font-weight:bold;color:var(--red-itp);font-size:1.1rem;">Airtel Money</span>
+                </label>
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Numéro de téléphone (+242)</label>
+              <input type="tel" id="phone" class="form-control" placeholder="06 XXX XX XX" required>
+            </div>
+            <div id="pay-error" role="alert" aria-live="assertive" style="display:none;color:var(--red-itp);margin-bottom:10px;font-size:0.9rem;padding:8px;background:#ffebee;border-radius:4px;"></div>
+            <button type="submit" aria-live="polite" id="pay-btn" class="btn-primary" style="width:100%;padding:13px;font-size:1rem;">
+              <span id="pay-text"><i class="fas fa-lock"></i> Payer maintenant</span>
+              <span id="pay-loader" class="d-none"><i class="fas fa-spinner fa-spin"></i> Traitement...</span>
+            </button>
+          </form>
+        </div>
+
+        <!-- Résumé compte -->
+        <div>
+          <div class="card" style="margin-bottom:20px;border-top:4px solid #28a745;">
+            <h4 style="margin:0 0 15px;">État du compte</h4>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:15px;">
+              <div style="text-align:center;padding:10px;background:#e8f5e9;border-radius:6px;">
+                <p style="margin:0;font-size:0.8rem;color:#666;">Total payé</p>
+                <h3 id="total-paid" style="margin:5px 0;color:#28a745;">—</h3>
+              </div>
+              <div style="text-align:center;padding:10px;background:#fff3e0;border-radius:6px;">
+                <p style="margin:0;font-size:0.8rem;color:#666;">Solde dû</p>
+                <h3 id="total-due" style="margin:5px 0;color:orange;">—</h3>
+              </div>
+            </div>
+            <div class="mt-15">
+              <div class="progress"><div id="pay-progress" class="progress-bar" style="width:0%;background:#28a745;"></div></div>
+              <p id="pay-progress-label" style="margin:4px 0 0;font-size:0.75rem;color:#666;text-align:center;"></p>
+            </div>
+          </div>
+          <div class="card" style="background:#f0f4ff;border:1px solid #c5d5f5;">
+            <h4 style="margin:0 0 10px;"><i class="fas fa-shield-alt"></i> Paiement Sécurisé</h4>
+            <p style="margin:0;font-size:0.85rem;color:#555;">Vos paiements sont sécurisés via les plateformes officielles MTN et Airtel Congo. Un SMS de confirmation vous sera envoyé immédiatement.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Historique -->
+    <div class="tab-panel" id="tab-history">
+      <div class="card">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:15px;flex-wrap:wrap;gap:10px;">
+          <h3 class="m-0">Historique des paiements</h3>
+          <div class="d-flex gap-10">
+            <button class="btn-outline" onclick="exportHistory()"><i class="fas fa-file-excel"></i> Export CSV</button>
+          </div>
+        </div>
+        <div class="table-wrapper">
+          <table class="data-table" role="table">
+            <thead><tr>
+              <th>Date</th><th>Libellé</th><th>Montant</th><th>Méthode</th><th>Statut</th><th>Reçu</th>
+            </tr></thead>
+            <tbody id="history-table">
+              <tr><td colspan="6" style="padding:20px;text-align:center;color:#999;"><i class="fas fa-spinner fa-spin"></i></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</main>
+</div>
+
+<script src="../assets/js/auth-guard.js" data-role="student"></script>
+<script src="../assets/js/main.js"></script>
+<script src="../assets/js/config.js"></script>
+<script src="../assets/js/api.js"></script>
+<script src="../assets/js/utils.js"></script>
+<script src="../assets/js/tests.js"></script>
+<script src="../assets/js/components.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  initTabs('tabs-paiements');
+  loadHistory();
+  selectMethod('MTN');
+});
+
+const FB_HISTORY = [
+  { payment_date:'2026-01-10', type:'Inscription Annuelle',   amount:50000,  method:'MTN',    status:'completed' },
+  { payment_date:'2026-03-15', type:'Scolarité — Tranche 1', amount:200000, method:'Airtel', status:'completed' },
+  { payment_date:null,         type:'Scolarité — Tranche 2', amount:150000, method:'—',      status:'pending' },
+];
+let payHistory = [...FB_HISTORY];
+
+function updateAmount() {
+  const v = document.getElementById('fee-type').value;
+  document.getElementById('amount-display').value = parseInt(v).toLocaleString('fr-FR') + ' FCFA';
+}
+
+function selectMethod(m) {
+  document.getElementById('label-mtn').style.borderColor    = m === 'MTN'    ? 'var(--dark-blue)' : 'var(--light-grey)';
+  document.getElementById('label-airtel').style.borderColor = m === 'Airtel' ? 'var(--dark-blue)' : 'var(--light-grey)';
+}
+
+async function loadHistory() {
+  const user = ITP_API.auth.currentUser();
+  try {
+    const data = await ITP_API.payments.getByStudent(user?.student_id || 1);
+    payHistory = data && data.length ? data : FB_HISTORY;
+  } catch { payHistory = FB_HISTORY; }
+  renderHistory(payHistory);
+  updateSummary(payHistory);
+}
+
+function renderHistory(payments) {
+  const sc = { completed:'badge-success', pending:'badge-warning', failed:'badge-danger' };
+  const sl = { completed:'Validé', pending:'En attente', failed:'Échoué' };
+  document.getElementById('history-table').innerHTML = payments.map(p => {
+    const date = p.payment_date ? new Date(p.payment_date).toLocaleDateString('fr-FR') : '—';
+    const amt  = parseInt(p.amount || 0).toLocaleString('fr-FR') + ' FCFA';
+    return `<tr>
+      <td>${date}</td>
+      <td>${p.type || '—'}</td>
+      <td class="fw-bold">${amt}</td>
+      <td>${p.method || '—'}</td>
+      <td><span class="badge ${sc[p.status]||''}">${sl[p.status]||p.status}</span></td>
+      <td>${p.status === 'completed'
+        ? `<button class="btn-outline" style="padding:4px 10px;font-size:0.8rem;" onclick="downloadReceipt(${JSON.stringify(p).replace(/"/g,"'")})"><i class="fas fa-receipt"></i> Reçu PDF</button>`
+        : '—'}</td>
+    </tr>`;
+  }).join('') || '<tr><td colspan="6" style="padding:20px;text-align:center;color:#999;">Aucun paiement trouvé.</td></tr>';
+}
+
+function updateSummary(payments) {
+  const paid  = payments.filter(p=>p.status==='completed').reduce((s,p)=>s+parseInt(p.amount||0),0);
+  const total = payments.reduce((s,p)=>s+parseInt(p.amount||0),0);
+  const pct   = total > 0 ? Math.round(paid/total*100) : 0;
+  document.getElementById('total-paid').textContent = paid.toLocaleString('fr-FR') + ' FCFA';
+  document.getElementById('total-due').textContent  = (total-paid).toLocaleString('fr-FR') + ' FCFA';
+  document.getElementById('pay-progress').style.width   = pct + '%';
+  document.getElementById('pay-progress-label').textContent = `${pct}% de vos frais réglés`;
+}
+
+async function processPayment(e) {
+  e.preventDefault();
+  const user   = ITP_API.auth.currentUser();
+  const amount = parseInt(document.getElementById('fee-type').value);
+  const method = document.querySelector('input[name="method"]:checked').value;
+  const phone  = document.getElementById('phone').value.trim();
+  const type   = document.getElementById('fee-type').options[document.getElementById('fee-type').selectedIndex].text;
+  if (!phone) { document.getElementById('pay-error').style.display='block'; document.getElementById('pay-error').textContent='Veuillez saisir votre numéro.'; return; }
+
+  document.getElementById('pay-text').style.display   = 'none';
+  document.getElementById('pay-loader').style.display = 'inline';
+  document.getElementById('pay-error').style.display  = 'none';
+
+  try {
+    await ITP_API.payments.create({ student_id: user?.student_id||1, amount, method, type, phone, status:'pending', payment_date: new Date().toISOString() });
+  } catch {}
+
+  // Notification
+  showToast('💳 Demande de paiement envoyée ! Confirmez sur votre téléphone.', 'success', 5000);
+  Notifs.sendSMS(phone, `ITP University : Paiement de ${amount.toLocaleString('fr-FR')} FCFA en attente de confirmation. Réf: ITP-${Date.now().toString().slice(-6)}`);
+  Security.log('payment_initiated', { amount, method, type });
+
+  // Ajouter dans l'historique local
+  payHistory.unshift({ payment_date: new Date().toISOString(), type, amount, method, status:'pending' });
+  renderHistory(payHistory);
+  updateSummary(payHistory);
+  document.getElementById('payment-form').reset();
+  updateAmount();
+  selectMethod('MTN');
+
+  document.getElementById('pay-text').style.display   = 'inline';
+  document.getElementById('pay-loader').style.display = 'none';
+}
+
+function downloadReceipt(payment) {
+  const student = ITP_API.auth.currentUser() || {};
+  PDF.generateReceipt(payment, student);
+  Security.log('receipt_downloaded', { type: payment.type });
+}
+
+function exportHistory() {
+  Excel.exportPayments(payHistory, 'paiements_itp.csv');
+}
+</script>
+<script>if('serviceWorker' in navigator){navigator.serviceWorker.register('../sw.js').catch(()=>{})}</script>
+</body></html>

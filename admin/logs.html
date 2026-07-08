@@ -1,0 +1,234 @@
+<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Journal d'activité — ITP University</title>
+<link rel="stylesheet" href="../assets/css/style.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+<link rel="icon" href="../assets/images/icon-192.png">
+<link rel="manifest" href="../manifest.json"></head><body>
+<a href="#main-content" class="sr-only">Aller au contenu principal</a>
+<div class="dashboard-layout">
+<aside class="sidebar" role="complementary">
+  <h3>Administration</h3>
+      <nav role="navigation" aria-label="Navigation principale" style="display:flex;flex-direction:column;gap:10px;margin-top:20px;">
+    <a href="index.html"        class="nav-link"><i class="fas fa-chart-line"></i> Tableau de bord</a>
+    <a href="analytics.html"    class="nav-link"><i class="fas fa-chart-bar"></i> Analytique</a>
+    <a href="utilisateurs.html" class="nav-link"><i class="fas fa-users"></i> Utilisateurs</a>
+    <a href="academic.html"     class="nav-link"><i class="fas fa-graduation-cap"></i> Structure Académique</a>
+    <a href="logs.html"         class="nav-link"><i class="fas fa-history"></i> Journal</a>
+    <a href="parametres.html"   class="nav-link"><i class="fas fa-cog"></i> Paramètres</a>
+    <a href="permissions.html"  class="nav-link"><i class="fas fa-shield-alt"></i> Permissions</a>
+    <a href="sauvegardes.html"  class="nav-link"><i class="fas fa-database"></i> Sauvegardes</a>
+    <a href="#" onclick="if(confirm('Se déconnecter ?')){localStorage.clear();window.location='../auth/login.html';}" class="nav-link"><i class="fas fa-sign-out-alt"></i> Déconnexion</a>
+  </nav>
+</aside>
+<main class="dashboard-main" id="main-content" role="main">
+  <div class="page-header">
+    <h2 class="page-title">Journal d'activité &amp; Connexions</h2>
+    <div class="d-flex gap-10">
+      <button class="btn-outline" onclick="exportLogs()"><i class="fas fa-file-excel"></i> Export CSV</button>
+      <button class="btn-primary" onclick="loadLogs()"><i class="fas fa-sync"></i> Actualiser</button>
+    </div>
+  </div>
+
+  <!-- KPIs -->
+  <div class="kpi-row mb-30">
+    <div class="stat-card" style="border-left-color:#28a745;">
+      <p class="stat-label">Connexions aujourd'hui</p>
+      <div id="kpi-logins" class="stat-val">—</div>
+    </div>
+    <div class="stat-card" style="border-left-color:var(--red-itp);">
+      <p class="stat-label">Tentatives échouées</p>
+      <div id="kpi-failed" class="stat-val">—</div>
+    </div>
+    <div class="stat-card" style="border-left-color:#f57c00;">
+      <p class="stat-label">Actions sensibles</p>
+      <div id="kpi-sensitive" class="stat-val">—</div>
+    </div>
+    <div class="stat-card" style="border-left-color:var(--dark-blue);">
+      <p class="stat-label">Utilisateurs actifs</p>
+      <div id="kpi-active" class="stat-val">—</div>
+    </div>
+  </div>
+
+  <div id="tabs-logs">
+    <div class="tabs">
+      <button class="tab active" data-tab="tab-activity">Journal d'activité</button>
+      <button class="tab" data-tab="tab-logins">Journal des connexions</button>
+      <button class="tab" data-tab="tab-security">Alertes sécurité</button>
+    </div>
+
+    <!-- Journal activité -->
+    <div class="tab-panel active" id="tab-activity">
+      <div class="card mb-20">
+        <div class="d-flex gap-10 flex-wrap align-center">
+          <input type="text" id="log-search" class="form-control" placeholder="Rechercher une action..." style="flex:1;min-width:180px;" oninput="filterLogs()" aria-label="Rechercher">
+          <select id="log-user" class="form-control" style="width:auto;" onchange="filterLogs()" aria-label="Filtrer par utilisateur">
+            <option value="">Tous les utilisateurs</option>
+            <option>admin_itp</option><option>prof_michel</option><option>djepht</option><option>secretaire</option>
+          </select>
+          <input type="date" id="log-date" class="form-control" style="width:auto;" onchange="filterLogs()" aria-label="Date">
+        </div>
+      </div>
+      <div class="card" style="padding:0;overflow:hidden;">
+        <div class="table-wrapper">
+          <table class="data-table" role="table" aria-label="Journal d'activité">
+            <thead><tr><th>Date/Heure</th><th>Utilisateur</th><th>Action</th><th>Détails</th><th>IP</th></tr></thead>
+            <tbody id="activity-table">
+              <tr><td colspan="5" class="text-center text-muted-sm" style="padding:20px;"><i class="fas fa-spinner fa-spin"></i></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Journal connexions -->
+    <div class="tab-panel" id="tab-logins">
+      <div class="card" style="padding:0;overflow:hidden;">
+        <div class="table-wrapper">
+          <table class="data-table" role="table" aria-label="Journal des connexions">
+            <thead><tr><th>Date/Heure</th><th>Utilisateur</th><th>IP</th><th>Résultat</th><th>Raison</th></tr></thead>
+            <tbody id="logins-table"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Alertes sécurité -->
+    <div class="tab-panel" id="tab-security">
+      <div class="card">
+        <h3 class="mb-20">Alertes de sécurité détectées</h3>
+        <div id="security-alerts"></div>
+      </div>
+    </div>
+  </div>
+</main>
+</div>
+
+<script src="../assets/js/main.js"></script>
+<script src="../assets/js/config.js"></script>
+<script src="../assets/js/api.js"></script>
+<script src="../assets/js/utils.js"></script>
+<script src="../assets/js/auth-guard.js" data-role="admin"></script>
+<script src="../assets/js/tests.js"></script>
+<script src="../assets/js/components.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', () => { initTabs('tabs-logs'); loadLogs(); });
+
+const FB_ACTIVITY = [
+  { ts:'2026-06-29 10:24', user:'admin_itp',   action:'settings_updated',   details:'Mise à jour paramètres système',       ip:'192.168.1.45' },
+  { ts:'2026-06-29 09:15', user:'secretaire',  action:'student_created',    details:'Nouvel étudiant : Patrick Louzolo',     ip:'192.168.1.12' },
+  { ts:'2026-06-29 08:50', user:'prof_michel', action:'grades_saved',       details:'10 notes enregistrées — Algorithmique', ip:'192.168.1.23' },
+  { ts:'2026-06-28 16:30', user:'djepht',      action:'payment_initiated',  details:'Paiement 150 000 FCFA via MTN',         ip:'41.79.132.45' },
+  { ts:'2026-06-28 14:22', user:'admin_itp',   action:'backup_created',     details:'Sauvegarde manuelle déclenchée',        ip:'192.168.1.45' },
+  { ts:'2026-06-28 11:05', user:'prof_michel', action:'bulletin_generated', details:'Bulletin étudiant MACKAYA Djepht',      ip:'192.168.1.23' },
+  { ts:'2026-06-27 09:00', user:'directeur',   action:'deliberation_run',   details:'Délibération L3 Génie Logiciel',        ip:'192.168.1.78' },
+  { ts:'2026-06-27 08:30', user:'admin_itp',   action:'user_created',       details:'Nouvel utilisateur : alice_mboka',      ip:'192.168.1.45' },
+];
+
+const FB_LOGINS = [
+  { ts:'2026-06-29 08:45', user:'djepht',      ip:'41.79.132.45', success:true,  reason:null },
+  { ts:'2026-06-29 08:30', user:'prof_michel', ip:'192.168.1.23', success:true,  reason:null },
+  { ts:'2026-06-29 08:20', user:'unknown',     ip:'41.79.145.22', success:false, reason:'Utilisateur introuvable' },
+  { ts:'2026-06-29 07:55', user:'admin_itp',   ip:'192.168.1.45', success:true,  reason:null },
+  { ts:'2026-06-28 18:10', user:'hacker123',   ip:'196.49.23.11', success:false, reason:'Mot de passe incorrect (3/5)' },
+  { ts:'2026-06-28 18:09', user:'hacker123',   ip:'196.49.23.11', success:false, reason:'Mot de passe incorrect (2/5)' },
+  { ts:'2026-06-28 18:08', user:'hacker123',   ip:'196.49.23.11', success:false, reason:'Mot de passe incorrect (1/5)' },
+];
+
+const FB_SECURITY = [
+  { level:'danger',  title:'Tentatives de connexion multiples',    desc:'IP 196.49.23.11 — 3 tentatives échouées en 2 minutes (utilisateur : hacker123)', ts:'2026-06-28 18:10' },
+  { level:'warning', title:'Connexion depuis une nouvelle IP',     desc:'Utilisateur djepht — IP 41.79.132.45 (première connexion depuis cette adresse)', ts:'2026-06-29 08:45' },
+  { level:'info',    title:'Sauvegarde automatique',               desc:'Sauvegarde quotidienne terminée avec succès — 147 MB', ts:'2026-06-29 03:00' },
+];
+
+let allLogs = [...FB_ACTIVITY];
+
+function renderKPIs() {
+  document.getElementById('kpi-logins').textContent    = FB_LOGINS.filter(l=>l.success).length;
+  document.getElementById('kpi-failed').textContent    = FB_LOGINS.filter(l=>!l.success).length;
+  document.getElementById('kpi-sensitive').textContent = FB_ACTIVITY.filter(l=>['backup_created','settings_updated','user_created','deliberation_run'].includes(l.action)).length;
+  document.getElementById('kpi-active').textContent    = new Set(FB_LOGINS.filter(l=>l.success).map(l=>l.user)).size;
+}
+
+const ACTION_LABELS = {
+  settings_updated:'⚙️ Paramètres', student_created:'👤 Étudiant créé', grades_saved:'📊 Notes saisies',
+  payment_initiated:'💳 Paiement', backup_created:'🗄️ Sauvegarde', bulletin_generated:'📄 Bulletin',
+  deliberation_run:'🎓 Délibération', user_created:'👤 Utilisateur créé', login_success:'🔐 Connexion',
+  password_changed:'🔑 Mot de passe', doc_requested:'📋 Document',
+};
+
+function renderActivity(logs) {
+  document.getElementById('activity-table').innerHTML = logs.length
+    ? logs.map(l => `<tr>
+        <td class="text-muted-sm" style="white-space:nowrap;">${l.ts}</td>
+        <td><code style="font-size:0.82rem;">${l.user}</code></td>
+        <td>${ACTION_LABELS[l.action]||l.action}</td>
+        <td class="text-muted-sm">${Security.sanitize(l.details)}</td>
+        <td><code style="font-size:0.78rem;">${l.ip}</code></td>
+      </tr>`).join('')
+    : '<tr><td colspan="5" class="text-center text-muted-sm" style="padding:20px;">Aucun résultat.</td></tr>';
+}
+
+function renderLogins() {
+  document.getElementById('logins-table').innerHTML = FB_LOGINS.map(l => `
+    <tr style="${!l.success?'background:#fff5f5;':''}">
+      <td class="text-muted-sm" style="white-space:nowrap;">${l.ts}</td>
+      <td><code style="font-size:0.82rem;">${l.user}</code></td>
+      <td><code style="font-size:0.78rem;">${l.ip}</code></td>
+      <td>${l.success
+        ? '<span class="badge badge-success">✓ Succès</span>'
+        : '<span class="badge badge-danger">✗ Échec</span>'}</td>
+      <td class="text-muted-sm">${l.reason||'—'}</td>
+    </tr>`).join('');
+}
+
+function renderSecurityAlerts() {
+  const colors = { danger:'var(--red-itp)', warning:'#f57c00', info:var(--dark-blue) };
+  document.getElementById('security-alerts').innerHTML = FB_SECURITY.map(a => `
+    <div style="padding:15px;border-left:5px solid ${a.level==='danger'?'var(--red-itp)':a.level==='warning'?'#f57c00':'var(--dark-blue)'};background:#f8f9fa;border-radius:0 6px 6px 0;margin-bottom:12px;">
+      <div class="d-flex justify-between align-center flex-wrap gap-8">
+        <div class="d-flex align-center gap-10">
+          <i class="fas fa-${a.level==='danger'?'exclamation-triangle':a.level==='warning'?'exclamation-circle':'info-circle'}"
+            style="color:${a.level==='danger'?'var(--red-itp)':a.level==='warning'?'#f57c00':'var(--dark-blue)'};font-size:1.2rem;"></i>
+          <strong>${a.title}</strong>
+        </div>
+        <span class="text-muted-sm">${a.ts}</span>
+      </div>
+      <p class="text-muted-sm m-0 mt-5">${a.desc}</p>
+    </div>`).join('');
+}
+
+function filterLogs() {
+  const q    = document.getElementById('log-search').value.toLowerCase();
+  const user = document.getElementById('log-user').value;
+  const date = document.getElementById('log-date').value;
+  renderActivity(allLogs.filter(l =>
+    (!q    || l.action.includes(q) || l.details.toLowerCase().includes(q)) &&
+    (!user || l.user === user) &&
+    (!date || l.ts.startsWith(date))
+  ));
+}
+
+async function loadLogs() {
+  try {
+    const data = await ITP_API.admin.getLogs();
+    if (data?.data?.length) allLogs = data.data;
+  } catch {}
+  // Enrichir avec les logs localStorage
+  const localLogs = JSON.parse(localStorage.getItem('itp_action_logs')||'[]');
+  localLogs.forEach(l => {
+    if (!allLogs.find(x=>x.action===l.action&&x.ts===l.timestamp?.slice(0,16).replace('T',' '))) {
+      allLogs.unshift({ ts:l.timestamp?.slice(0,16).replace('T',' ')||'—', user:l.user||'—', action:l.action, details:JSON.stringify(l.details||{}), ip:'127.0.0.1' });
+    }
+  });
+  renderKPIs();
+  renderActivity(allLogs.slice(0,20));
+  renderLogins();
+  renderSecurityAlerts();
+}
+
+function exportLogs() {
+  Excel.exportCSV(allLogs.map(l=>({ Date:l.ts, Utilisateur:l.user, Action:l.action, Détails:l.details, IP:l.ip })), 'journal_itp.csv');
+}
+</script>
+<script>if('serviceWorker' in navigator){navigator.serviceWorker.register('../sw.js').catch(()=>{})}</script>
+</body></html>

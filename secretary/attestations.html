@@ -1,0 +1,173 @@
+<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Attestations — ITP University</title>
+<link rel="stylesheet" href="../assets/css/style.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+<link rel="manifest" href="../manifest.json"></head><body>
+<a href="#main-content" class="sr-only">Aller au contenu principal</a>
+<div class="dashboard-layout">
+<aside class="sidebar" role="complementary" aria-label="Menu secrétariat">
+  <h3>Secrétariat</h3>
+  <nav role="navigation" aria-label="Navigation principale" style="display:flex;flex-direction:column;gap:10px;margin-top:20px;">
+    <a href="index.html"        class="nav-link"><i class="fas fa-user-plus"></i> Inscriptions</a>
+    <a href="attestations.html" class="nav-link active"><i class="fas fa-file-alt"></i> Attestations</a>
+    <a href="reclamations.html" class="nav-link"><i class="fas fa-exclamation-circle"></i> Réclamations</a>
+    <a href="paiements.html"    class="nav-link"><i class="fas fa-wallet"></i> Paiements</a>
+    <a href="etudiants.html"    class="nav-link"><i class="fas fa-users"></i> Étudiants</a>
+    <a href="evenements.html"   class="nav-link"><i class="fas fa-calendar-alt"></i> Événements</a>
+    <a href="#" onclick="if(confirm('Se déconnecter ?')){localStorage.clear();window.location='../auth/login.html';}" class="nav-link"><i class="fas fa-sign-out-alt"></i> Déconnexion</a>
+  </nav>
+</aside>
+<main class="dashboard-main" id="main-content" role="main">
+  <div class="page-header">
+    <div>
+      <h2 class="page-title">Demandes d'Attestations</h2>
+      <p class="text-muted-sm m-0">Gérer et délivrer les documents officiels</p>
+    </div>
+    <button class="btn-primary" onclick="openNewDoc()"><i class="fas fa-plus"></i> Nouvelle demande</button>
+  </div>
+
+  <div class="kpi-row mb-30">
+    <div class="stat-card" style="border-left-color:var(--dark-blue);"><p class="stat-label">En attente</p><div class="stat-val" id="k-pending">—</div></div>
+    <div class="stat-card" style="border-left-color:#f57c00;"><p class="stat-label">En traitement</p><div class="stat-val" id="k-processing">—</div></div>
+    <div class="stat-card" style="border-left-color:#28a745;"><p class="stat-label">Prêtes</p><div class="stat-val" id="k-ready">—</div></div>
+    <div class="stat-card" style="border-left-color:#2a9d8f;"><p class="stat-label">Délivrées (mois)</p><div class="stat-val" id="k-delivered">—</div></div>
+  </div>
+
+  <div class="card mb-20">
+    <div class="d-flex gap-10 flex-wrap align-center">
+      <input type="text" id="search-att" class="form-control" placeholder="Nom, matricule..." style="flex:1;min-width:180px;" oninput="filterDocs()" aria-label="Rechercher">
+      <select id="filter-type" class="form-control" style="width:auto;" onchange="filterDocs()" aria-label="Type">
+        <option value="">Tous types</option>
+        <option value="attestation">Attestation scolarité</option>
+        <option value="releve">Relevé de notes</option>
+        <option value="carte">Carte étudiante</option>
+        <option value="diplome">Diplôme</option>
+      </select>
+      <select id="filter-status" class="form-control" style="width:auto;" onchange="filterDocs()" aria-label="Statut">
+        <option value="">Tous statuts</option>
+        <option value="pending">En attente</option>
+        <option value="processing">En traitement</option>
+        <option value="ready">Prête</option>
+        <option value="delivered">Délivrée</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="card" style="padding:0;overflow:hidden;">
+    <div class="table-wrapper">
+      <table class="data-table" role="table" aria-label="Demandes de documents">
+        <thead><tr><th>Étudiant</th><th>Matricule</th><th>Type</th><th>Date</th><th>Exemplaires</th><th>Statut</th><th>Actions</th></tr></thead>
+        <tbody id="docs-table"></tbody>
+      </table>
+    </div>
+  </div>
+</main>
+</div>
+<script src="../assets/js/main.js"></script>
+<script src="../assets/js/config.js"></script>
+<script src="../assets/js/api.js"></script>
+<script src="../assets/js/utils.js"></script>
+<script src="../assets/js/auth-guard.js" data-role="secretary,admin"></script>
+<script src="../assets/js/tests.js"></script>
+<script src="../assets/js/components.js"></script>
+<script>
+const TYPE_L = {attestation:'Attestation scolarité',releve:'Relevé de notes',carte:'Carte étudiante',diplome:'Diplôme',autre:'Autre'};
+const STATUS_L = {pending:{l:'En attente',c:'badge-warning'},processing:{l:'En traitement',c:'badge-info'},ready:{l:'Prête',c:'badge-success'},delivered:{l:'Délivrée',c:'badge-dark'},rejected:{l:'Rejetée',c:'badge-danger'}};
+
+const FB = [
+  {id:1,student:'MACKAYA Djepht',mat:'ITP-2026-0452',type:'attestation',date:'2026-06-25',copies:2,status:'ready',purpose:'Visa'},
+  {id:2,student:"M'BOKA Alice",  mat:'ITP-2026-0124',type:'releve',    date:'2026-06-26',copies:1,status:'pending',purpose:'Bourse'},
+  {id:3,student:'TRAORÉ Moussa', mat:'ITP-2026-0089',type:'carte',     date:'2026-06-27',copies:1,status:'processing',purpose:'Remplacement'},
+  {id:4,student:'LOUZOLO Patrick',mat:'ITP-2026-0201',type:'attestation',date:'2026-06-20',copies:3,status:'delivered',purpose:'Emploi'},
+  {id:5,student:'KIMBEMBE Sarah',mat:'ITP-2026-0310',type:'diplome',   date:'2026-06-15',copies:1,status:'ready',purpose:'Concours'},
+];
+let docs = [...FB];
+
+function renderDocs(list) {
+  document.getElementById('k-pending').textContent   = docs.filter(d=>d.status==='pending').length;
+  document.getElementById('k-processing').textContent= docs.filter(d=>d.status==='processing').length;
+  document.getElementById('k-ready').textContent     = docs.filter(d=>d.status==='ready').length;
+  document.getElementById('k-delivered').textContent = docs.filter(d=>d.status==='delivered').length;
+
+  document.getElementById('docs-table').innerHTML = list.length ? list.map(d => {
+    const st = STATUS_L[d.status]||STATUS_L.pending;
+    return `<tr>
+      <td><strong>${Security.sanitize(d.student)}</strong></td>
+      <td><code class="fs-xs">${d.mat}</code></td>
+      <td>${TYPE_L[d.type]||d.type}</td>
+      <td class="text-muted-sm">${new Date(d.date).toLocaleDateString('fr-FR')}</td>
+      <td class="text-center">${d.copies}</td>
+      <td><span class="badge ${st.c}">${st.l}</span></td>
+      <td>
+        <div class="d-flex gap-5">
+          ${d.status==='pending'?`<button class="btn-primary" style="padding:4px 10px;font-size:0.78rem;" onclick="changeStatus(${d.id},'processing')">Traiter</button>`:''}
+          ${d.status==='processing'?`<button class="btn-success" style="padding:4px 10px;font-size:0.78rem;" onclick="changeStatus(${d.id},'ready')">Prête</button>`:''}
+          ${d.status==='ready'?`<button class="btn-primary" style="padding:4px 10px;font-size:0.78rem;" onclick="changeStatus(${d.id},'delivered')">Remettre</button>`:''}
+          <button class="btn-outline" style="padding:4px 10px;font-size:0.78rem;" onclick="printDoc(${d.id})"><i class="fas fa-print"></i></button>
+        </div>
+      </td>
+    </tr>`;
+  }).join('') : '<tr><td colspan="7" class="text-center text-muted-sm" style="padding:20px;">Aucune demande.</td></tr>';
+}
+
+function filterDocs() {
+  const q = document.getElementById('search-att').value.toLowerCase();
+  const t = document.getElementById('filter-type').value;
+  const s = document.getElementById('filter-status').value;
+  renderDocs(docs.filter(d=>
+    (!q || d.student.toLowerCase().includes(q) || d.mat.toLowerCase().includes(q)) &&
+    (!t || d.type===t) && (!s || d.status===s)
+  ));
+}
+
+function changeStatus(id, status) {
+  const d = docs.find(x=>x.id===id);
+  if (!d) return;
+  d.status = status;
+  filterDocs();
+  Security.log('doc_status_changed',{id,status});
+  const msgs = {processing:'Demande prise en charge.',ready:'Document prêt à remettre.',delivered:'Document remis à l\'étudiant.'};
+  showToast(msgs[status]||'Statut mis à jour.','success');
+}
+
+function printDoc(id) {
+  const d = docs.find(x=>x.id===id);
+  if (!d) return;
+  Security.log('doc_printed',{id,student:d.student,type:d.type});
+  showToast(`📄 Impression : ${TYPE_L[d.type]} — ${d.student}`, 'info', 3000);
+}
+
+function openNewDoc() {
+  Modal.show('Nouvelle demande de document',
+    `<div class="form-grid-2">
+      <div class="form-group"><label class="form-label">Étudiant (matricule)</label>
+        <input id="nd-mat" class="form-control" placeholder="ITP-2026-XXXX" required></div>
+      <div class="form-group"><label class="form-label">Type de document</label>
+        <select id="nd-type" class="form-control">
+          ${Object.entries(TYPE_L).map(([v,l])=>`<option value="${v}">${l}</option>`).join('')}
+        </select></div>
+      <div class="form-group"><label class="form-label">Nombre d'exemplaires</label>
+        <input type="number" id="nd-copies" class="form-control" value="1" min="1" max="10"></div>
+      <div class="form-group"><label class="form-label">Motif</label>
+        <input id="nd-purpose" class="form-control" placeholder="Ex: Visa, Bourse..."></div>
+    </div>`,
+    [{label:'Créer',cls:'btn-primary',fn:'saveDoc()'},{label:'Annuler',cls:'btn-outline',fn:'Modal.close()'}]
+  );
+}
+
+function saveDoc() {
+  const mat  = document.getElementById('nd-mat')?.value?.trim();
+  const type = document.getElementById('nd-type')?.value;
+  const copies = parseInt(document.getElementById('nd-copies')?.value||1);
+  const purpose= document.getElementById('nd-purpose')?.value?.trim();
+  if (!mat) { showToast('Matricule obligatoire.','warning'); return; }
+  docs.unshift({id:Date.now(),student:'Étudiant ('+mat+')',mat,type,date:new Date().toISOString().split('T')[0],copies,status:'pending',purpose});
+  filterDocs(); Modal.close();
+  showToast('✅ Demande créée !','success');
+  Security.log('doc_request_created',{mat,type});
+}
+
+renderDocs(docs);
+</script>
+<script>if('serviceWorker' in navigator){navigator.serviceWorker.register('../sw.js').catch(()=>{})}</script>
+</body></html>

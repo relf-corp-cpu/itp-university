@@ -1,0 +1,188 @@
+<!DOCTYPE html><html lang="fr"><head>
+  <link rel="manifest" href="../manifest.json">
+  <meta name="theme-color" content="#1D3557"><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Connexion — ITP University</title>
+<link rel="stylesheet" href="../assets/css/style.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+<link rel="icon" href="../assets/images/icon-192.png"></head><body>
+<a href="#main-content" class="sr-only" style="position:absolute;left:-999px;" onfocus="this.style.left='10px'">Aller au contenu principal</a>
+
+<div id="itp-header"></div>
+<main id="main-content" style="display:flex;justify-content:center;align-items:center;min-height:80vh;background-color:#f4f7f6;padding:40px 20px;">
+  <div class="card" style="width:100%;max-width:420px;box-shadow:0 4px 15px rgba(0,0,0,0.1);">
+    <div style="text-align:center;margin-bottom:25px;">
+      <img src="../assets/images/icon-192.png" alt="ITP" style="width:60px;height:60px;">
+      <h2 style="margin:10px 0 0;">Connexion</h2>
+      <p style="color:#666;font-size:0.9rem;margin:5px 0;">Institut Technique Polytechnique — Brazzaville</p>
+    </div>
+
+    <!-- Mode indicateur -->
+    <div id="mode-badge" style="text-align:center;margin-bottom:15px;">
+      <span id="mode-label" style="padding:4px 12px;border-radius:20px;font-size:0.75rem;font-weight:bold;"></span>
+    </div>
+
+    <form id="login-form" aria-label="Formulaire de connexion" onsubmit="handleLogin(event)">
+      <div class="mb-20">
+        <label class="form-label">Identifiant / Email</label>
+        <div class="relative">
+          <i class="fas fa-user" style="position:absolute;left:12px;top:50%;transform:translateY(-50%);color:#999;"></i>
+          <input type="text" id="username" required autocomplete="username" aria-describedby="login-error" autocomplete="username"
+            style="width:100%;padding:12px 12px 12px 38px;border:1px solid var(--light-grey);border-radius:6px;box-sizing:border-box;font-size:1rem;">
+        </div>
+      </div>
+      <div class="mb-20">
+        <label class="form-label">Mot de passe</label>
+        <div class="relative">
+          <i class="fas fa-lock" style="position:absolute;left:12px;top:50%;transform:translateY(-50%);color:#999;"></i>
+          <input type="password" id="password" required autocomplete="current-password"
+            style="width:100%;padding:12px 12px 12px 38px;border:1px solid var(--light-grey);border-radius:6px;box-sizing:border-box;font-size:1rem;">
+          <i id="toggle-pw" class="fas fa-eye" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);color:#999;cursor:pointer;" onclick="togglePw()"></i>
+        </div>
+      </div>
+      <div style="margin-bottom:20px;display:flex;justify-content:space-between;align-items:center;">
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
+          <input type="checkbox" id="remember"> Se souvenir de moi
+        </label>
+        <a href="reset_password.html" style="color:var(--dark-blue);font-size:0.9rem;">Mot de passe oublié ?</a>
+      </div>
+      <div id="login-error" role="alert" aria-live="assertive" style="display:none;color:var(--red-itp);margin-bottom:15px;text-align:center;font-size:0.9rem;padding:10px;background:#ffebee;border-radius:5px;"></div>
+      <button type="submit" aria-live="polite" id="submit-btn" class="btn-primary" style="width:100%;padding:13px;font-size:1rem;position:relative;">
+        <span id="btn-text">Se connecter</span>
+        <span id="btn-loader" class="d-none"><i class="fas fa-spinner fa-spin"></i> Connexion...</span>
+      </button>
+          <p style="text-align:right;margin-top:-10px;margin-bottom:15px;font-size:0.85rem;">
+        <a href="forgot_password.html" style="color:var(--dark-blue);">Mot de passe oublié ?</a>
+      </p>
+</form>
+      <p style="text-align:center;margin-top:10px;font-size:0.82rem;color:#888;">
+        <a href="2fa.html" style="color:var(--dark-blue);">Connexion avec double authentification (2FA)</a>
+      </p>
+      <p class="text-center mt-15" style="font-size:0.85rem;color:#666;">
+        Email non confirmé ?
+        <a href="verify_email.html?email=" style="color:var(--dark-blue);font-weight:bold;">Renvoyer le lien</a>
+      </p>
+
+    <div style="margin-top:20px;padding-top:15px;border-top:1px solid var(--light-grey);">
+      <p style="text-align:center;font-size:0.8rem;color:#888;margin-bottom:8px;">Comptes de démonstration :</p>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;justify-content:center;">
+        <button onclick="fillDemo('admin_itp','Admin@2026')" style="background:#1D3557;color:white;border:none;padding:5px 10px;border-radius:15px;cursor:pointer;font-size:0.75rem;">Admin</button>
+        <button onclick="fillDemo('prof_michel','Prof@2026')" style="background:#457b9d;color:white;border:none;padding:5px 10px;border-radius:15px;cursor:pointer;font-size:0.75rem;">Professeur</button>
+        <button onclick="fillDemo('djepht','Student@2026')" style="background:#e63946;color:white;border:none;padding:5px 10px;border-radius:15px;cursor:pointer;font-size:0.75rem;">Étudiant</button>
+        <button onclick="fillDemo('secretaire','Secr@2026')" style="background:#2a9d8f;color:white;border:none;padding:5px 10px;border-radius:15px;cursor:pointer;font-size:0.75rem;">Secrétariat</button>
+        <button onclick="fillDemo('directeur','Dir@2026')" style="background:#e9c46a;color:#333;border:none;padding:5px 10px;border-radius:15px;cursor:pointer;font-size:0.75rem;">Direction</button>
+      </div>
+    </div>
+    <p style="text-align:center;margin-top:15px;">Pas encore de compte ? <a href="register.html" style="color:var(--dark-blue);">Inscrivez-vous</a></p>
+  </div>
+</main>
+<div id="itp-footer"></div>
+<script src="../assets/js/main.js"></script>
+<script src="../assets/js/config.js"></script>
+<script src="../assets/js/api.js"></script>
+<script src="../assets/js/utils.js"></script>
+<script src="../assets/js/tests.js"></script>
+<script src="../assets/js/components.js"></script>
+<script>
+// Afficher le mode actif
+window.addEventListener('DOMContentLoaded', () => {
+  const badge = document.getElementById('mode-label');
+  const mode  = window.ITP_CONFIG?.mode || 'supabase';
+  badge.textContent = mode === 'laravel' ? '⚡ Mode Laravel (XAMPP local)' : '☁️ Mode Supabase (démo en ligne)';
+  badge.style.background = mode === 'laravel' ? '#e8f5e9' : '#e3f2fd';
+  badge.style.color       = mode === 'laravel' ? '#2e7d32' : '#1565c0';
+});
+
+function togglePw() {
+  const pw = document.getElementById('password');
+  const ic = document.getElementById('toggle-pw');
+  pw.type = pw.type === 'password' ? 'text' : 'password';
+  ic.className = `fas fa-${pw.type === 'password' ? 'eye' : 'eye-slash'}`;
+}
+
+function fillDemo(user, pass) {
+  document.getElementById('username').value = user;
+  document.getElementById('password').value = pass;
+}
+
+// Correspondance rôle → dashboard
+const ROLE_DEST = {
+  admin:     '../admin/index.html',
+  professor: '../professor/index.html',
+  student:   '../student/index.html',
+  secretary: '../secretary/index.html',
+  direction: '../direction/index.html',
+};
+
+// Crédentiels démo fallback (si API indisponible)
+const DEMO_USERS = {
+  admin_itp:   { role:'admin',     password:'Admin@2026',   name:'Admin ITP' },
+  prof_michel: { role:'professor', password:'Prof@2026',    name:'Prof. Michel Moukoko' },
+  djepht:      { role:'student',   password:'Student@2026', name:'Djepht MACKAYA' },
+  secretaire:  { role:'secretary', password:'Secr@2026',    name:'Secrétaire ITP' },
+  directeur:   { role:'direction', password:'Dir@2026',     name:'Directeur ITP' },
+};
+
+async function handleLogin(e) {
+  e.preventDefault();
+  // Vérification rate limiting
+  if (!Security.checkLoginAllowed()) return;
+  const username = document.getElementById('username').value.trim();
+  const password = document.getElementById('password').value;
+  const errDiv   = document.getElementById('login-error');
+  const btnText  = document.getElementById('btn-text');
+  const btnLoad  = document.getElementById('btn-loader');
+
+  errDiv.style.display = 'none';
+  btnText.style.display = 'none';
+  btnLoad.style.display = 'inline';
+
+  try {
+    // Tentative via API
+    const data = await ITP_API.auth.login(username, password);
+    Security.resetLoginAttempts();
+    Security.log('login_success', { username });
+    const role = data.user?.role;
+    const dest = ROLE_DEST[role] || '../index.html';
+    window.location.href = dest;
+
+  } catch (err) {
+    // Fallback démo si API non configurée
+    const demoUser = DEMO_USERS[username.toLowerCase()];
+    if (demoUser && password === demoUser.password) {
+      localStorage.setItem('itp_user', JSON.stringify({
+        username, role: demoUser.role, name: demoUser.name
+      }));
+      localStorage.setItem('itp_token', 'demo_token');
+      window.location.href = ROLE_DEST[demoUser.role];
+    } else {
+      Security.recordFailedLogin();
+      errDiv.style.display = 'block';
+      errDiv.textContent   = err.message.includes('Failed to fetch')
+        ? '⚠️ API non disponible. Utilisez les comptes de démo ci-dessous.'
+        : '❌ Identifiant ou mot de passe incorrect.';
+    }
+  } finally {
+    btnText.style.display = 'inline';
+    btnLoad.style.display = 'none';
+  }
+}
+</script>
+
+<script>
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('../sw.js').catch(() => {});
+}
+</script>
+
+<!-- PWA Banner -->
+<div id="pwa-banner">
+  <div class="d-flex align-center gap-12">
+    <img src="../assets/images/icon-192.png" style="width:36px;height:36px;border-radius:8px;">
+    <div><strong>ITP University</strong><br><small>Installer l'application sur votre appareil</small></div>
+  </div>
+  <div class="d-flex gap-10">
+    <button onclick="installPWA()" style="background:white;color:var(--dark-blue);border:none;padding:8px 16px;border-radius:5px;cursor:pointer;font-weight:bold;">Installer</button>
+    <button onclick="dismissPWA()" style="background:none;border:none;color:rgba(255,255,255,0.7);cursor:pointer;font-size:1.2rem;">&#x2715;</button>
+  </div>
+</div>
+</body></html>

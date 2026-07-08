@@ -1,0 +1,208 @@
+<!DOCTYPE html><html lang="fr"><head>
+  <link rel="manifest" href="../manifest.json">
+  <meta name="theme-color" content="#1D3557"><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Forum — ITP University</title>
+<link rel="stylesheet" href="../assets/css/style.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+<link rel="icon" href="../assets/images/icon-192.png"></head><body>
+<a href="#main-content" class="sr-only" style="position:absolute;left:-999px;" onfocus="this.style.left='10px'">Aller au contenu principal</a>
+
+<div id="itp-header"></div>
+<main id="main-content" style="padding:50px;max-width:1000px;margin:0 auto;">
+  <h2 style="text-align:center;margin-bottom:30px;">Forum Académique ITP</h2>
+  <div style="display:flex;justify-content:space-between;margin-bottom:25px;flex-wrap:wrap;gap:12px;">
+    <div style="display:flex;gap:10px;flex-wrap:wrap;">
+      <button class="btn-primary" onclick="openNewTopic()"><i class="fas fa-plus"></i> Nouveau sujet</button>
+      <input type="text" id="forum-search" placeholder="Rechercher..." aria-label="Rechercher dans le forum" style="padding:10px;border:1px solid var(--light-grey);border-radius:5px;min-width:180px;" oninput="filterTopics()">
+    </div>
+    <select id="cat-filter" style="padding:10px;border:1px solid var(--light-grey);border-radius:5px;" onchange="filterTopics()">
+      <option value="">Toutes les catégories</option>
+      <option>Systèmes</option><option>Algorithmique</option>
+      <option>Stages</option><option>Aide aux devoirs</option><option>Génie Logiciel</option>
+    </select>
+  </div>
+
+  <!-- Modale nouveau sujet -->
+  <div id="new-topic-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:1000;display:none;align-items:center;justify-content:center;">
+    <div style="background:white;border-radius:10px;padding:30px;width:90%;max-width:500px;">
+      <h3>Nouveau sujet</h3>
+      <input type="text" id="topic-title" placeholder="Titre du sujet" style="width:100%;padding:10px;border:1px solid var(--light-grey);border-radius:4px;box-sizing:border-box;margin:15px 0;">
+      <select id="topic-cat" style="width:100%;padding:10px;border:1px solid var(--light-grey);border-radius:4px;margin-bottom:15px;">
+        <option>Systèmes</option><option>Algorithmique</option>
+        <option>Stages</option><option>Aide aux devoirs</option><option>Génie Logiciel</option>
+      </select>
+      <textarea id="topic-body" placeholder="Votre message..." style="width:100%;padding:10px;border:1px solid var(--light-grey);border-radius:4px;height:100px;box-sizing:border-box;resize:vertical;"></textarea>
+      <div style="display:flex;gap:10px;margin-top:15px;">
+        <button class="btn-primary" onclick="submitTopic()">Publier</button>
+        <button class="btn-outline" onclick="closeModal()">Annuler</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="forum-status" style="color:#999;text-align:right;font-size:0.85rem;margin-bottom:10px;"></div>
+  <div class="card" style="padding:0;overflow:hidden;">
+    <table role="table" style="width:100%;border-collapse:collapse;" id="forum-table">
+      <thead style="background:#f8f9fa;"><tr style="text-align:left;border-bottom:2px solid var(--light-grey);">
+        <th style="padding:15px;">Sujet</th>
+        <th style="padding:15px;">Catégorie</th>
+        <th style="padding:15px;">Réponses</th>
+        <th style="padding:15px;">Dernier message</th>
+      </tr></thead>
+      <tbody id="forum-body">
+        <tr><td colspan="4" style="padding:20px;text-align:center;color:#999;"><i class="fas fa-spinner fa-spin"></i></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Zone réponse -->
+  <div id="reply-zone" style="display:none;margin-top:25px;">
+    <div class="card">
+      <h3 id="reply-title" style="margin:0 0 15px;"></h3>
+      <textarea id="reply-text" placeholder="Votre réponse..." style="width:100%;padding:10px;border:1px solid var(--light-grey);border-radius:4px;height:90px;box-sizing:border-box;resize:vertical;"></textarea>
+      <div style="display:flex;gap:10px;margin-top:10px;">
+        <button class="btn-primary" onclick="submitReply()">Publier</button>
+        <button class="btn-outline" onclick="document.getElementById('reply-zone').style.display='none'">Annuler</button>
+      </div>
+    </div>
+  </div>
+</main>
+<div id="itp-footer"></div>
+<script src="../assets/js/main.js"></script>
+<script src="../assets/js/config.js"></script>
+<script src="../assets/js/api.js"></script>
+<script src="../assets/js/utils.js"></script>
+<script src="../assets/js/tests.js"></script>
+<script src="../assets/js/components.js"></script>
+<script>
+const CAT_STYLES = {
+  'Systèmes':      'background:#e3f2fd;color:#1976d2',
+  'Algorithmique': 'background:#fff3e0;color:#f57c00',
+  'Stages':        'background:#e8f5e9;color:#2e7d32',
+  'Aide aux devoirs':'background:#f3e5f5;color:#7b1fa2',
+  'Génie Logiciel':'background:#e8eaf6;color:#283593',
+};
+
+const FB_TOPICS = [
+  { id:1, title:'Comment configurer Apache sous Linux ?',           category:'Systèmes',       replies:12, user_name:'Marc L.',        updated:'Il y a 2h' },
+  { id:2, title:'Besoin d\'aide sur l\'algorithme de Dijkstra',     category:'Algorithmique',  replies:5,  user_name:'Sarah M.',       updated:'Il y a 5h' },
+  { id:3, title:'Offre de stage chez MTN Congo — Dev Flutter',      category:'Stages',         replies:8,  user_name:'Secrétariat ITP',updated:'Il y a 1j' },
+  { id:4, title:'Exercices UML — Diagramme de classes [CORRIGÉS]',  category:'Aide aux devoirs',replies:21, user_name:'Prof. Moukoko', updated:'Il y a 3h' },
+  { id:5, title:'Laravel 11 vs Symfony — Quel framework choisir ?', category:'Génie Logiciel', replies:15, user_name:'Patrick L.',     updated:'Il y a 6h' },
+  { id:6, title:'Correction du TP Réseaux — Chapitre 3',           category:'Aide aux devoirs',replies:3,  user_name:'Prof. Nguimbi', updated:'Il y a 2j' },
+];
+
+let allTopics = [...FB_TOPICS];
+let currentTopicId = null;
+
+async function loadTopics() {
+  try {
+    const data = await ITP_API.forum.getTopics();
+    if (data && data.length) {
+      allTopics = data.map(t => ({
+        id: t.id, title: t.title,
+        category: t.forums?.name || 'Général',
+        replies: 0,
+        user_name: t.users?.name || 'Inconnu',
+        updated: 'Récemment'
+      }));
+      allTopics = [...allTopics, ...FB_TOPICS.filter(ft => !allTopics.find(t => t.title === ft.title))];
+    }
+  } catch {}
+  renderTopics(allTopics);
+}
+
+function renderTopics(topics) {
+  document.getElementById('forum-status').textContent = `${topics.length} sujet(s)`;
+  document.getElementById('forum-body').innerHTML = topics.map(t => {
+    const catStyle = CAT_STYLES[t.category] || 'background:#eee;color:#333';
+    return `
+      <tr class="topic-row" data-cat="${t.category}" style="border-bottom:1px solid var(--light-grey);cursor:pointer;" onclick="openTopic(${t.id},'${t.title.replace(/'/g,"\\'")}')">
+        <td style="padding:15px;">
+          <a style="font-weight:bold;color:var(--dark-blue);text-decoration:none;">${t.title}</a>
+          <p style="margin:4px 0 0;font-size:0.8rem;color:#888;">Par ${t.user_name}</p>
+        </td>
+        <td style="padding:15px;"><span style="${catStyle};padding:4px 10px;border-radius:20px;font-size:0.8rem;">${t.category}</span></td>
+        <td style="padding:15px;font-weight:bold;">${t.replies}</td>
+        <td style="padding:15px;font-size:0.85rem;color:#888;">${t.updated}</td>
+      </tr>`;
+  }).join('') || '<tr><td colspan="4" style="padding:20px;text-align:center;color:#999;">Aucun sujet trouvé.</td></tr>';
+}
+
+function filterTopics() {
+  const q   = document.getElementById('forum-search').value.toLowerCase();
+  const cat = document.getElementById('cat-filter').value;
+  renderTopics(allTopics.filter(t =>
+    (!cat || t.category === cat) &&
+    (!q   || t.title.toLowerCase().includes(q) || t.user_name.toLowerCase().includes(q))
+  ));
+}
+
+function openTopic(id, title) {
+  currentTopicId = id;
+  document.getElementById('reply-zone').style.display = 'block';
+  document.getElementById('reply-title').textContent  = title;
+  document.getElementById('reply-zone').scrollIntoView({ behavior:'smooth' });
+}
+
+async function submitReply() {
+  const user = ITP_API.auth.currentUser();
+  if (!user) { if (confirm('Connectez-vous pour répondre.')) window.location.href='../auth/login.html'; return; }
+  const text = document.getElementById('reply-text').value.trim();
+  if (!text) return;
+  try {
+    await ITP_API.forum.createReply({ topic_id: currentTopicId, user_id: user.id || 1, message: text });
+  } catch {}
+  document.getElementById('reply-text').value = '';
+  document.getElementById('reply-zone').style.display = 'none';
+  // Incrémenter compteur localement
+  const topic = allTopics.find(t => t.id === currentTopicId);
+  if (topic) topic.replies++;
+  renderTopics(allTopics);
+  alert('✅ Réponse publiée !');
+}
+
+function openNewTopic() {
+  const user = ITP_API.auth.currentUser();
+  if (!user) { if (confirm('Connectez-vous pour créer un sujet.')) window.location.href='../auth/login.html'; return; }
+  document.getElementById('new-topic-modal').style.display = 'flex';
+}
+function closeModal() { document.getElementById('new-topic-modal').style.display = 'none'; }
+
+async function submitTopic() {
+  const user  = ITP_API.auth.currentUser();
+  const title = document.getElementById('topic-title').value.trim();
+  const cat   = document.getElementById('topic-cat').value;
+  const body  = document.getElementById('topic-body').value.trim();
+  if (!title || !body) return;
+  try {
+    await ITP_API.forum.createTopic({ title, forum_id:1, user_id: user?.id || 1, message: body });
+  } catch {}
+  allTopics.unshift({ id: Date.now(), title, category: cat, replies:0, user_name: user?.name || 'Moi', updated:'À l\'instant' });
+  renderTopics(allTopics);
+  closeModal();
+  document.getElementById('topic-title').value = '';
+  document.getElementById('topic-body').value  = '';
+  alert('✅ Sujet publié !');
+}
+
+loadTopics();
+</script>
+
+<script>
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('../sw.js').catch(() => {});
+}
+</script>
+
+<!-- PWA Banner -->
+<div id="pwa-banner">
+  <div class="d-flex align-center gap-12">
+    <img src="../assets/images/icon-192.png" style="width:36px;height:36px;border-radius:8px;">
+    <div><strong>ITP University</strong><br><small>Installer l'application sur votre appareil</small></div>
+  </div>
+  <div class="d-flex gap-10">
+    <button onclick="installPWA()" style="background:white;color:var(--dark-blue);border:none;padding:8px 16px;border-radius:5px;cursor:pointer;font-weight:bold;">Installer</button>
+    <button onclick="dismissPWA()" style="background:none;border:none;color:rgba(255,255,255,0.7);cursor:pointer;font-size:1.2rem;">&#x2715;</button>
+  </div>
+</div>
+</body></html>
