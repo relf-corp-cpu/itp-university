@@ -1,9 +1,9 @@
 <!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>Tests — ITP University</title>
-<link rel="stylesheet" href="./assets/css/style.css">
+<link rel="stylesheet" href="/itp-university/assets/css/style.css">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-<link rel="icon" href="./assets/images/icon-192.png">
-<link rel="manifest" href="./manifest.json"></head><body>
+<link rel="icon" href="/itp-university/assets/images/icon-192.png">
+<link rel="manifest" href="/itp-university/manifest.json"></head><body>
 <div id="itp-header"></div>
 <main role="main" id="main-content" style="padding:50px;max-width:1000px;margin:0 auto;">
   <div class="page-header">
@@ -83,12 +83,12 @@
   </div>
 </main>
 <div id="itp-footer"></div>
-<script src="./assets/js/main.js"></script>
-<script src="./assets/js/config.js"></script>
-<script src="./assets/js/api.js"></script>
-<script src="./assets/js/utils.js"></script>
-<script src="./assets/js/tests.js"></script>
-<script src="./assets/js/components.js"></script>
+<script src="/itp-university/assets/js/main.js"></script>
+<script src="/itp-university/assets/js/config.js"></script>
+<script src="/itp-university/assets/js/api.js"></script>
+<script src="/itp-university/assets/js/utils.js"></script>
+<script src="/itp-university/assets/js/tests.js"></script>
+<script src="/itp-university/assets/js/components.js"></script>
 <script>
 const GROUP_ICONS = {
   'Calcul des notes':    { icon:'fa-chart-bar', color:'#1D3557' },
@@ -182,7 +182,7 @@ function getGroup(name) {
   if (name.match(/note|statut|DST|Session|Ajourné|Bien|Passable|Compensable|formule/i)) return '📊 Calcul des notes';
   if (name.match(/Security|sanitize|login|tentative|reset|rate/i)) return '🔒 Sécurité';
   if (name.match(/ITP_CONFIG|mode|apiBase|headers|Content-Type/i)) return '⚙️ Configuration API';
-  if (name.match(/ITP_API|module|calculate|grades\./i)) return '🔌 Modules API';
+  if (name.match(/ITP_API|module|calculate|grades\/itp-university/i)) return '🔌 Modules API';
   if (name.match(/PDF|Excel|QR|AI|Toast|Modal|generateQR|showToast/i)) return '🛠️ Utilitaires';
   if (name.match(/DOM|lang|title|viewport|main|toast container|pwa|manifest|service/i)) return '🌐 DOM';
   if (name.match(/alt|bouton|label|skip|contraste|role|aria/i)) return '♿ Accessibilité';
@@ -195,5 +195,5 @@ function exportResults() {
   Excel.exportCSV(tests.map(t => ({ Test: t.name, Statut: t.status, Erreur: t.error || '' })), 'tests_itp.csv');
 }
 </script>
-<script>if('serviceWorker' in navigator){navigator.serviceWorker.register('./sw.js').catch(()=>{})}</script>
+<script>if('serviceWorker' in navigator){navigator.serviceWorker.register('/itp-university/sw.js').catch(()=>{})}</script>
 </body></html>
