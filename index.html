@@ -6,9 +6,9 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>ITP University — Brazzaville</title>
-  <link rel="stylesheet" href="./assets/css/style.css">
+  <link rel="stylesheet" href="/itp-university/assets/css/style.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-  <link rel="icon" href="./assets/images/icon-192.png">
+  <link rel="icon" href="/itp-university/assets/images/icon-192.png">
 </head>
 <body>
 <a href="#main-content" class="sr-only" style="position:absolute;left:-999px;" onfocus="this.style.left='10px'">Aller au contenu principal</a>
@@ -17,7 +17,7 @@
 
 <main>
   <!-- Hero -->
-  <section style="position:relative;height:500px;background:url('./assets/images/home.png') center/cover;display:flex;align-items:center;justify-content:center;">
+  <section style="position:relative;height:500px;background:url('/itp-university/assets/images/home.png') center/cover;display:flex;align-items:center;justify-content:center;">
     <div style="padding:40px;text-align:center;border-radius:10px;width:80%;max-width:800px;background:rgba(255,255,255,0.88);">
       <h1 style="color:var(--dark-blue);font-size:3rem;">Bienvenue à l'ITP</h1>
       <p style="font-size:1.2rem;">L'excellence technologique au service de votre avenir — Brazzaville, Congo.</p>
@@ -27,7 +27,7 @@
         <button class="btn-primary" style="border-radius:0 5px 5px 0;padding:15px 30px;">Rechercher</button>
       </div>
       <div class="mt-20">
-        <a href="./pages/pre-inscription.html" class="btn-outline">Pré-inscription en ligne</a>
+        <a href="/itp-university/pages/pre-inscription.html" class="btn-outline">Pré-inscription en ligne</a>
       </div>
     </div>
   </section>
@@ -96,8 +96,8 @@
 </main>
 
 <div id="itp-footer"></div>
-<script src="./assets/js/main.js"></script>
-<script src="./assets/js/components.js"></script>
+<script src="/itp-university/assets/js/main.js"></script>
+<script src="/itp-university/assets/js/components.js"></script>
 
 <!-- Chatbot flottant -->
 <div id="chatbot-trigger" role="button" aria-label="Ouvrir l'assistant ITP" aria-expanded="false" style="position:fixed;bottom:30px;right:30px;width:60px;height:60px;background:var(--dark-blue);border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 4px 15px rgba(0,0,0,0.3);z-index:1000;">
@@ -148,19 +148,19 @@ async function loadHomeData() {
         <span style="color:${CAT_COLORS[a.category]||'var(--dark-blue)'};font-size:0.8rem;font-weight:bold;">${a.category||'ITP'}</span>
         <h3 style="margin:8px 0;">${a.title}</h3>
         <p>${(a.content||'').substring(0,100)}...</p>
-        <a href="./pages/actualites.html" style="color:var(--dark-blue);font-weight:bold;">Lire la suite →</a>
+        <a href="/itp-university/pages/actualites.html" style="color:var(--dark-blue);font-weight:bold;">Lire la suite →</a>
       </div>`).join('');
   } catch {
     document.getElementById('home-articles').innerHTML = `
       <div class="card" style="border:1px solid var(--light-grey);border-radius:8px;padding:20px;background:white;">
         <h3>Remise des diplômes 2026</h3>
         <p>Une cérémonie inoubliable pour nos nouveaux ingénieurs du campus de Poto-Poto...</p>
-        <a href="./pages/actualites.html" style="color:var(--dark-blue);">Lire la suite</a>
+        <a href="/itp-university/pages/actualites.html" style="color:var(--dark-blue);">Lire la suite</a>
       </div>
       <div class="card" style="border:1px solid var(--light-grey);border-radius:8px;padding:20px;background:white;">
         <h3>Hackathon ITP Brazzaville 2026</h3>
         <p>48 heures pour innover et créer les solutions de demain...</p>
-        <a href="./pages/actualites.html" style="color:var(--dark-blue);">Lire la suite</a>
+        <a href="/itp-university/pages/actualites.html" style="color:var(--dark-blue);">Lire la suite</a>
       </div>`;
   }
 }
